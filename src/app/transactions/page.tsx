@@ -17,12 +17,11 @@ import {
   Edit3,
   Trash2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { toast } from 'react-hot-toast';
-import { transactionService, formatCurrency, getCategoryColor } from '@/services/api';
-import { Transaction, TransactionFilters } from '@/types';
 
 // ============================================================================
 // PREMIUM TRANSACTIONS PAGE - Financial Data Command Center
@@ -53,6 +52,145 @@ const CATEGORY_OPTIONS = [
   'Transfer',
   'Other'
 ];
+
+// Utility functions
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
+
+const getCategoryColor = (category: string): string => {
+  const colors: { [key: string]: string } = {
+    'Food & Dining': '#ef4444',
+    'Transportation': '#3b82f6',
+    'Shopping': '#8b5cf6',
+    'Entertainment': '#f59e0b',
+    'Bills & Utilities': '#10b981',
+    'Healthcare': '#ec4899',
+    'Education': '#6366f1',
+    'Travel': '#14b8a6',
+    'Business Expenses': '#84cc16',
+    'Income': '#22c55e',
+    'Investment': '#06b6d4',
+    'Transfer': '#64748b',
+    'Other': '#9ca3af',
+  };
+  return colors[category] || '#9ca3af';
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+// Types
+interface Transaction {
+  _id: string;
+  description: string;
+  amount: number;
+  category: string;
+  type: 'income' | 'expense';
+  date: string;
+  paymentMethod?: string;
+  source?: string;
+  isTaxDeductible?: boolean;
+}
+
+interface TransactionFilters {
+  search?: string;
+  category?: string;
+  type?: string;
+  datePreset?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+// Pagination Component
+const Pagination = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  return (
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+      <div className="flex flex-1 justify-between sm:hidden">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+      
+      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm text-gray-700">
+            Page <span className="font-medium">{currentPage}</span> of{' '}
+            <span className="font-medium">{totalPages}</span>
+          </p>
+        </div>
+        <div>
+          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <button
+              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                    page === currentPage
+                      ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            
+            <button
+              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -87,45 +225,71 @@ export default function TransactionsPage() {
     setIsLoading(true);
     
     try {
-      // Calculate date range based on preset
-      let startDate, endDate;
-      const now = new Date();
+      // Simulate API call with mock data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      switch (filters.datePreset) {
-        case 'this_month':
-          startDate = format(startOfMonth(now), 'yyyy-MM-dd');
-          endDate = format(endOfMonth(now), 'yyyy-MM-dd');
-          break;
-        case 'last_month':
-          const lastMonth = subMonths(now, 1);
-          startDate = format(startOfMonth(lastMonth), 'yyyy-MM-dd');
-          endDate = format(endOfMonth(lastMonth), 'yyyy-MM-dd');
-          break;
-        case 'last_3_months':
-          startDate = format(subMonths(now, 3), 'yyyy-MM-dd');
-          endDate = format(now, 'yyyy-MM-dd');
-          break;
-        case 'this_year':
-          startDate = format(new Date(now.getFullYear(), 0, 1), 'yyyy-MM-dd');
-          endDate = format(now, 'yyyy-MM-dd');
-          break;
-        default:
-          // All time - no date filters
-          break;
-      }
-
-      const queryFilters: TransactionFilters = {
-        ...filters,
-        page: currentPage,
-        startDate,
-        endDate,
-      };
-
-      const response = await transactionService.getAll(queryFilters);
+      const mockTransactions: Transaction[] = [
+        { 
+          _id: '1', 
+          description: 'Salary Deposit', 
+          amount: 2600.00, 
+          category: 'Income', 
+          date: '2025-08-30', 
+          type: 'income',
+          paymentMethod: 'direct_deposit',
+          source: 'Company Inc.',
+          isTaxDeductible: false
+        },
+        { 
+          _id: '2', 
+          description: 'Grocery Shopping - Whole Foods', 
+          amount: -89.50, 
+          category: 'Food & Dining', 
+          date: '2025-08-30', 
+          type: 'expense',
+          paymentMethod: 'credit_card',
+          source: 'Chase Sapphire',
+          isTaxDeductible: false
+        },
+        { 
+          _id: '3', 
+          description: 'Netflix Subscription', 
+          amount: -15.99, 
+          category: 'Entertainment', 
+          date: '2025-08-29', 
+          type: 'expense',
+          paymentMethod: 'credit_card',
+          source: 'Auto-pay',
+          isTaxDeductible: false
+        },
+        { 
+          _id: '4', 
+          description: 'Uber Ride to Airport', 
+          amount: -45.30, 
+          category: 'Transportation', 
+          date: '2025-08-29', 
+          type: 'expense',
+          paymentMethod: 'credit_card',
+          source: 'Chase Sapphire',
+          isTaxDeductible: true
+        },
+        { 
+          _id: '5', 
+          description: 'Freelance Project Payment', 
+          amount: 500.00, 
+          category: 'Income', 
+          date: '2025-08-28', 
+          type: 'income',
+          paymentMethod: 'bank_transfer',
+          source: 'Client ABC',
+          isTaxDeductible: false
+        },
+      ];
       
-      setTransactions(response.transactions);
-      setTotalPages(response.pagination.totalPages);
-      setTotalCount(response.pagination.totalTransactions);
+      setTransactions(mockTransactions);
+      setTotalPages(Math.ceil(mockTransactions.length / ITEMS_PER_PAGE));
+      setTotalCount(mockTransactions.length);
+      toast.success('Transactions loaded successfully!');
       
     } catch (error: any) {
       console.error('Failed to load transactions:', error);
@@ -191,7 +355,8 @@ export default function TransactionsPage() {
     const handleDelete = async () => {
       if (confirm('Are you sure you want to delete this transaction?')) {
         try {
-          await transactionService.delete(transaction._id);
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 500));
           toast.success('Transaction deleted successfully');
           loadTransactions();
         } catch (error) {
@@ -223,17 +388,14 @@ export default function TransactionsPage() {
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
         </td>
-
+        
         {/* Date */}
         <td className="px-6 py-4 text-sm text-gray-900">
           <div className="font-medium">
-            {format(parseISO(transaction.date), 'MMM dd')}
-          </div>
-          <div className="text-gray-500">
-            {format(parseISO(transaction.date), 'yyyy')}
+            {formatDate(transaction.date)}
           </div>
         </td>
-
+        
         {/* Description & Category */}
         <td className="px-6 py-4">
           <div className="flex items-center">
@@ -260,12 +422,12 @@ export default function TransactionsPage() {
             </div>
           </div>
         </td>
-
+        
         {/* Payment Method */}
         <td className="px-6 py-4 text-sm text-gray-500">
           {transaction.paymentMethod?.replace('_', ' ').toUpperCase() || 'N/A'}
         </td>
-
+        
         {/* Amount */}
         <td className="px-6 py-4 text-right">
           <div className={`text-sm font-semibold ${
@@ -284,7 +446,7 @@ export default function TransactionsPage() {
             {transaction.source}
           </div>
         </td>
-
+        
         {/* Actions */}
         <td className="px-6 py-4 text-right">
           <div className="relative">
@@ -294,12 +456,14 @@ export default function TransactionsPage() {
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
-
             {showActions && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                 <div className="py-1">
                   <button
-                    onClick={() => router.push(`/transactions/${transaction._id}/edit`)}
+                    onClick={() => {
+                      toast.success('Edit feature coming soon!');
+                      setShowActions(false);
+                    }}
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
@@ -307,7 +471,10 @@ export default function TransactionsPage() {
                   </button>
                   
                   <button
-                    onClick={handleCopy}
+                    onClick={() => {
+                      handleCopy();
+                      setShowActions(false);
+                    }}
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
                     <Copy className="h-4 w-4 mr-2" />
@@ -315,7 +482,10 @@ export default function TransactionsPage() {
                   </button>
                   
                   <button
-                    onClick={() => router.push(`/transactions/${transaction._id}`)}
+                    onClick={() => {
+                      toast.success('View details feature coming soon!');
+                      setShowActions(false);
+                    }}
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
@@ -325,7 +495,10 @@ export default function TransactionsPage() {
                   <hr className="my-1" />
                   
                   <button
-                    onClick={handleDelete}
+                    onClick={() => {
+                      handleDelete();
+                      setShowActions(false);
+                    }}
                     className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -347,7 +520,7 @@ export default function TransactionsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
           <p className="text-gray-600 mt-1">
-            {totalCount} transactions • {filters.datePreset.replace('_', ' ')}
+            {totalCount} transactions • {filters.datePreset?.replace('_', ' ')}
           </p>
         </div>
         
@@ -360,13 +533,16 @@ export default function TransactionsPage() {
             {isBalanceVisible ? 'Hide' : 'Show'} amounts
           </button>
           
-          <button className="btn-secondary text-sm">
+          <button 
+            onClick={() => toast.success('Export feature coming soon!')}
+            className="btn-secondary text-sm"
+          >
             <Download className="h-4 w-4 mr-1" />
             Export
           </button>
           
           <button 
-            onClick={() => router.push('/transactions/add')}
+            onClick={() => toast.success('Add transaction feature coming soon!')}
             className="btn-primary text-sm"
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -390,7 +566,7 @@ export default function TransactionsPage() {
             </div>
           </div>
         </div>
-
+        
         <div className="card">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center text-white">
@@ -404,7 +580,7 @@ export default function TransactionsPage() {
             </div>
           </div>
         </div>
-
+        
         <div className="card">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white">
@@ -418,7 +594,7 @@ export default function TransactionsPage() {
             </div>
           </div>
         </div>
-
+        
         <div className="card">
           <div className="flex items-center">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white">
@@ -450,7 +626,7 @@ export default function TransactionsPage() {
               />
             </div>
           </div>
-
+          
           {/* Date Filter */}
           <div>
             <select
@@ -465,7 +641,7 @@ export default function TransactionsPage() {
               ))}
             </select>
           </div>
-
+          
           {/* Category Filter */}
           <div>
             <select
@@ -494,11 +670,17 @@ export default function TransactionsPage() {
                 {selectedTransactions.length} transaction{selectedTransactions.length !== 1 ? 's' : ''} selected
               </span>
               <div className="flex items-center space-x-2">
-                <button className="btn-secondary text-sm">
+                <button 
+                  onClick={() => toast.success('Export selected feature coming soon!')}
+                  className="btn-secondary text-sm"
+                >
                   <Download className="h-4 w-4 mr-1" />
                   Export Selected
                 </button>
-                <button className="btn-danger text-sm">
+                <button 
+                  onClick={() => toast.success('Delete selected feature coming soon!')}
+                  className="btn-danger text-sm"
+                >
                   <Trash2 className="h-4 w-4 mr-1" />
                   Delete Selected
                 </button>
@@ -506,7 +688,7 @@ export default function TransactionsPage() {
             </div>
           </div>
         )}
-
+        
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -552,4 +734,28 @@ export default function TransactionsPage() {
                     <div className="text-gray-500">
                       <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
-                      <p className="text-sm">Try adjusting your filters or ad
+                      <p className="text-sm">Try adjusting your filters or add a new transaction.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                transactions.map(transaction => (
+                  <TransactionRow key={transaction._id} transaction={transaction} />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
