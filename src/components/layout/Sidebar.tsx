@@ -165,12 +165,14 @@ export default function Sidebar({ isCollapsed = false, onToggleCollapse }: Sideb
               {item.badge && (
                 <span className={`
                   ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                  ${active 
+                     ${active 
                     ? 'bg-white/20 text-white' 
-                    : item.badge === 'New```                      ? 'bg-blue-100 text-blue-700'
+                    : item.badge === 'New' 
+                      ? 'bg-blue-100 text-blue-700'
                       : item.badge === 'Quick'
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-gray-100 text-gray-700'
+
                   }
                 `}>
                   {item.badge}
