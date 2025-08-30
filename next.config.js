@@ -3,16 +3,14 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
-  
+  distDir: 'out',
   images: {
     unoptimized: true,
   },
-  
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   },
-  
   poweredByHeader: false,
   reactStrictMode: true,
   swcMinify: true,
