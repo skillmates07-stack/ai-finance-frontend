@@ -2,11 +2,14 @@
   "name": "ai-finance-frontend",
   "version": "0.1.0",
   "private": true,
+  "description": "AI-powered personal finance assistant frontend",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "export": "next export"
   },
   "dependencies": {
     "next": "14.0.0",
@@ -19,18 +22,31 @@
     "tailwindcss": "^3.3.3",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
+    "axios": "^1.5.0",
     "react-hook-form": "^7.45.4",
     "react-hot-toast": "^2.4.1",
     "lucide-react": "^0.288.0",
-    "axios": "^1.5.0",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
     "date-fns": "^2.30.0",
+    "clsx": "^2.0.0",
     "js-cookie": "^3.0.5",
-    "clsx": "^2.0.0"
+    "@types/js-cookie": "^3.0.4"
   },
   "devDependencies": {
     "eslint": "^8.51.0",
     "eslint-config-next": "14.0.0",
-    "@netlify/plugin-nextjs": "^5.12.1",
-    "@types/js-cookie": "^3.0.4"
-  }
+    "@tailwindcss/forms": "^0.5.6",
+    "@tailwindcss/typography": "^0.5.10",
+    "@netlify/plugin-nextjs": "^5.12.1"
+  },
+  "keywords": [
+    "finance",
+    "ai",
+    "nextjs",
+    "personal-finance",
+    "expense-tracking"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
