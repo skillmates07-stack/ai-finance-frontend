@@ -18,17 +18,31 @@ import {
   CreditCard
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { transactionService, formatCurrency } from '@/services/api';
-import { Transaction, AnalyticsData } from '@/types';
 
 // ============================================================================
 // DASHBOARD PAGE - The Financial Command Center
 // ============================================================================
 
+// Mock data and utility functions (removing external dependencies)
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
+
+interface Transaction {
+  id: number;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  isExpense: boolean;
+}
+
 export default function DashboardPage() {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   // Load dashboard data
@@ -40,14 +54,18 @@ export default function DashboardPage() {
     setIsLoading(true);
     
     try {
-      // Fetch analytics and recent transactions
-      const [analytics, transactions] = await Promise.all([
-        transactionService.getAnalytics(),
-        transactionService.getAll({ limit: 5, sortBy: 'date', sortOrder: 'desc' })
-      ]);
+      // Simulate API call with mock data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setAnalyticsData(analytics);
-      setRecentTransactions(transactions.transactions);
+      const mockTransactions: Transaction[] = [
+        { id: 1, description: 'Starbucks Coffee', amount: -5.45, category: 'Food & Dining', date: 'Today', isExpense: true },
+        { id: 2, description: 'Uber Ride', amount: -12.30, category: 'Transportation', date: 'Today', isExpense: true },
+        { id: 3, description: 'Salary Deposit', amount: 2600.00, category: 'Income', date: 'Yesterday', isExpense: false },
+        { id: 4, description: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', date: 'Yesterday', isExpense: true },
+        { id: 5, description: 'Amazon Purchase', amount: -89.99, category: 'Shopping', date: '2 days ago', isExpense: true },
+      ];
+      
+      setRecentTransactions(mockTransactions);
     } catch (error: any) {
       console.error('Dashboard data loading error:', error);
       toast.error('Failed to load dashboard data');
@@ -80,7 +98,7 @@ export default function DashboardPage() {
     icon: any;
     gradient: string;
   }) => (
-    <div className="card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm text-gray-600 font-medium">{title}</p>
@@ -127,7 +145,7 @@ export default function DashboardPage() {
     <button
       onClick={onClick}
       className={`
-        card text-left group hover:shadow-xl transition-all duration-300 hover:-translate-y-1
+        bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-left group hover:shadow-xl transition-all duration-300 hover:-translate-y-1
         ${isHighlight ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
       `}
     >
@@ -185,7 +203,7 @@ export default function DashboardPage() {
           {/* Balance visibility toggle */}
           <button
             onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-            className="btn-ghost text-sm"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
           >
             {isBalanceVisible ? (
               <EyeOff className="h-4 w-4 mr-1" />
@@ -196,7 +214,7 @@ export default function DashboardPage() {
           </button>
           
           {/* Export button */}
-          <button className="btn-secondary text-sm">
+          <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
             <Download className="h-4 w-4 mr-1" />
             Export
           </button>
@@ -234,7 +252,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Savings goal progress */}
-      <div className="card">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Savings Goal</h3>
@@ -272,7 +290,7 @@ export default function DashboardPage() {
           icon={Plus}
           title="Add Expense"
           description="Quick entry"
-          onClick={() => {}}
+          onClick={() => toast.success('Add expense feature coming soon!')}
           gradient="bg-gradient-to-r from-green-500 to-emerald-600"
           isHighlight={true}
         />
@@ -281,7 +299,7 @@ export default function DashboardPage() {
           icon={Zap}
           title="AI Categorize"
           description="Smart sorting"
-          onClick={() => {}}
+          onClick={() => toast.success('AI categorization coming soon!')}
           gradient="bg-gradient-to-r from-purple-500 to-pink-600"
         />
         
@@ -289,7 +307,7 @@ export default function DashboardPage() {
           icon={CreditCard}
           title="Link Bank"
           description="Auto-sync"
-          onClick={() => {}}
+          onClick={() => toast.success('Bank linking coming soon!')}
           gradient="bg-gradient-to-r from-blue-500 to-indigo-600"
         />
         
@@ -297,13 +315,13 @@ export default function DashboardPage() {
           icon={Calendar}
           title="Monthly Report"
           description="View insights"
-          onClick={() => {}}
+          onClick={() => toast.success('Monthly reports coming soon!')}
           gradient="bg-gradient-to-r from-orange-500 to-red-600"
         />
       </div>
 
       {/* Recent transactions */}
-      <div className="card">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
@@ -311,11 +329,11 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center space-x-2">
-            <button className="btn-ghost text-sm">
+            <button className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
               <Filter className="h-4 w-4 mr-1" />
               Filter
             </button>
-            <button className="btn-primary text-sm">
+            <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
               View All
             </button>
           </div>
@@ -323,13 +341,7 @@ export default function DashboardPage() {
 
         {/* Transaction list */}
         <div className="space-y-3">
-          {[
-            { id: 1, description: 'Starbucks Coffee', amount: -5.45, category: 'Food & Dining', date: 'Today', isExpense: true },
-            { id: 2, description: 'Uber Ride', amount: -12.30, category: 'Transportation', date: 'Today', isExpense: true },
-            { id: 3, description: 'Salary Deposit', amount: 2600.00, category: 'Income', date: 'Yesterday', isExpense: false },
-            { id: 4, description: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', date: 'Yesterday', isExpense: true },
-            { id: 5, description: 'Amazon Purchase', amount: -89.99, category: 'Shopping', date: '2 days ago', isExpense: true },
-          ].map((transaction) => (
+          {recentTransactions.map((transaction) => (
             <div key={transaction.id} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 group">
               <div className={`h-10 w-10 rounded-lg flex items-center justify-center text-white shadow-sm ${
                 transaction.isExpense 
@@ -367,7 +379,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI Insights card */}
-      <div className="card bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200">
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl shadow-sm p-6">
         <div className="flex items-start">
           <div className="flex-shrink-0">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white">
@@ -389,7 +401,10 @@ export default function DashboardPage() {
               </p>
             </div>
             
-            <button className="mt-4 btn-primary text-sm">
+            <button 
+              onClick={() => toast.success('AI insights feature coming soon!')}
+              className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
+            >
               View All Insights
             </button>
           </div>
