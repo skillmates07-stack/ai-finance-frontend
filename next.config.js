@@ -1,36 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable experimental features
-  experimental: {
-    // App directory (Next.js 13+)
-    appDir: true,
-  },
+  // Output configuration for Netlify
+  output: 'export',
+  trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   
   // Image optimization
   images: {
+    unoptimized: true,
     domains: [
       'localhost',
+      'https://ai-finance-backend-x51w.onrender.com', // Replace with YOUR backend URL
       'avatars.githubusercontent.com',
-      'lh3.googleusercontent.com',
-      'images.unsplash.com'
+      'lh3.googleusercontent.com'
     ],
     formats: ['image/webp', 'image/avif'],
   },
   
-  // Environment variables to expose to the browser
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  // Experimental features
+  experimental: {
+    appDir: true,
   },
   
-  // Redirects
-  async redirects() {
-    return [
-      {
-        source: '/home',
-        destination: '/dashboard',
-        permanent: true,
-      },
-    ];
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   },
   
   // Headers for security
@@ -44,7 +39,7 @@ const nextConfig = {
             value: 'DENY',
           },
           {
-            key: 'X-Content-Type-Options',
+            key: 'X-Content-Type-Options', 
             value: 'nosniff',
           },
           {
@@ -56,19 +51,7 @@ const nextConfig = {
     ];
   },
   
-  // Webpack configuration
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Important: return the modified config
-    return config;
-  },
-  
-  // Output configuration for static export (if needed)
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
-  
-  // Compression
-  compress: true,
-  
-  // Power by header
+  // Disable powered by header
   poweredByHeader: false,
   
   // React strict mode
