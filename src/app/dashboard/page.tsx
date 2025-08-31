@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import AddTransactionModal from '@/components/AddTransactionModal'; // NEW IMPORT
+// REMOVED: import AddTransactionModal from '@/components/AddTransactionModal';
 import { 
   ArrowLeft,
   LogOut,
@@ -52,7 +52,7 @@ const formatCurrency = (amount: number): string => {
 };
 
 interface Transaction {
-  id: string; // Changed to string for better compatibility
+  id: string;
   description: string;
   amount: number;
   category: string;
@@ -60,8 +60,8 @@ interface Transaction {
   isExpense: boolean;
   merchant?: string;
   isRecurring?: boolean;
-  userId: string; // NEW: Added user association
-  createdAt: string; // NEW: Added timestamp
+  userId: string;
+  createdAt: string;
 }
 
 interface AIInsight {
@@ -83,8 +83,7 @@ export default function DashboardPage() {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   
-  // NEW: Add Transaction Modal State
-  const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
+  // REMOVED: const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
 
   // Protect the route - redirect if not authenticated
   useEffect(() => {
@@ -107,7 +106,7 @@ export default function DashboardPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Load user-specific transactions from localStorage (later replace with MongoDB API)
+      // Load user-specific transactions from localStorage
       const userTransactions = JSON.parse(localStorage.getItem(`user_transactions_${user?.id}`) || '[]');
       
       // If no user transactions, add welcome bonus
@@ -185,29 +184,7 @@ export default function DashboardPage() {
     }
   };
 
-  // NEW: Handle transaction added from modal
-  const handleTransactionAdded = (newTransaction: Transaction) => {
-    // Add to the beginning of the list
-    setRecentTransactions(prev => [newTransaction, ...prev.slice(0, 9)]);
-    
-    // Update AI insights based on transaction count
-    const newCount = recentTransactions.length + 1;
-    if (newCount >= 3) {
-      setAiInsights(prev => [
-        {
-          id: Date.now(),
-          type: 'goal',
-          title: 'Building momentum! 🚀',
-          description: `You've added ${newCount} transactions. Our AI is getting smarter about your spending!`,
-          action: 'View Insights'
-        },
-        ...prev.slice(0, 2)
-      ]);
-    }
-    
-    // Refresh data to get updated totals
-    setTimeout(() => loadDashboardData(), 500);
-  };
+  // REMOVED: const handleTransactionAdded = (newTransaction: Transaction) => { ... }
 
   // Calculate real totals from user transactions
   const calculateUserStats = () => {
@@ -231,7 +208,7 @@ export default function DashboardPage() {
 
   // Sample data for demo (enhanced with real user data)
   const demoData = {
-    totalBalance: userStats.totalBalance + 24467.82, // Add demo base amount
+    totalBalance: userStats.totalBalance + 24467.82,
     monthlyIncome: userStats.monthlyIncome || 8750.00,
     monthlyExpenses: userStats.monthlyExpenses || 4320.15,
     savingsGoal: 50000,
@@ -623,7 +600,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions - UPDATED with working Add Transaction */}
+      {/* Quick Actions - UPDATED: Navigate to page instead of modal */}
       <div>
         <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -631,7 +608,7 @@ export default function DashboardPage() {
             icon={Plus}
             title="Add Transaction"
             description="Record income/expense"
-            onClick={() => setIsAddTransactionModalOpen(true)} // NEW: Opens working modal
+            onClick={() => router.push('/transactions/add')} // CHANGED: Navigate to page
             gradient="bg-gradient-to-r from-green-500 to-emerald-600"
             isHighlight={true}
           />
@@ -665,7 +642,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Content Grid - UPDATED with real transaction data */}
+      {/* Main Content Grid - UPDATED: Navigate to page instead of modal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -708,7 +685,7 @@ export default function DashboardPage() {
                   Start tracking your finances by adding your first transaction. Our AI will learn from your spending patterns!
                 </p>
                 <button
-                  onClick={() => setIsAddTransactionModalOpen(true)}
+                  onClick={() => router.push('/transactions/add')} // CHANGED: Navigate to page
                   className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
                   <Plus className="h-5 w-5 mr-2" />
@@ -759,7 +736,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* AI Insights - UPDATED with dynamic content */}
+        {/* AI Insights - UPDATED: Navigate to page instead of modal */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
@@ -802,7 +779,7 @@ export default function DashboardPage() {
                       <button 
                         onClick={() => {
                           if (insight.action === 'Add Transaction') {
-                            setIsAddTransactionModalOpen(true);
+                            router.push('/transactions/add'); // CHANGED: Navigate to page
                           } else {
                             toast.success(`${insight.action} feature coming soon! 🎯`);
                           }
@@ -820,12 +797,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* NEW: Add Transaction Modal */}
-      <AddTransactionModal
-        isOpen={isAddTransactionModalOpen}
-        onClose={() => setIsAddTransactionModalOpen(false)}
-        onTransactionAdded={handleTransactionAdded}
-      />
+      {/* REMOVED: <AddTransactionModal ... /> */}
     </div>
   );
 }
