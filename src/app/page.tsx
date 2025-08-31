@@ -4,7 +4,7 @@ import { ArrowRight, BarChart3, Brain, Shield, Zap, Star, TrendingUp, Users, Che
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Navigation */}
+      {/* FIXED Navigation - Removed announcement bar */}
       <nav className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
@@ -17,36 +17,34 @@ export default function HomePage() {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Features</Link>
-            <Link href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Pricing</Link>
-            <Link href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Reviews</Link>
+            <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Features</a>
+            <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Pricing</a>
+            <a href="#testimonials" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Reviews</a>
             <div className="flex items-center space-x-3">
               <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">
                 Sign In
               </Link>
-              <Link href="/register" className="btn-primary shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+              {/* FIXED: Removed any persistent active states */}
+              <Link 
+                href="/register" 
+                className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
                 Start Free Trial
               </Link>
             </div>
           </div>
           <div className="md:hidden">
-            <Link href="/register" className="btn-primary text-sm">
+            <Link 
+              href="/register" 
+              className="inline-flex items-center px-4 py-2 rounded-lg font-semibold text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200"
+            >
               Get Started
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Announcement Bar */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm font-medium">
-            🎉 <strong>Product Hunt #1</strong> • Featured in TechCrunch • <strong>$2.4M</strong> saved by users this month!
-          </p>
-        </div>
-      </div>
-
-      {/* Hero Section */}
+      {/* Hero Section - Removed announcement bar completely */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20">
         {/* Trust Indicators */}
         <div className="flex items-center justify-center space-x-8 mb-8 text-sm text-gray-600">
@@ -101,12 +99,15 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link href="/register" className="btn-primary text-xl px-10 py-5 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300">
+            <Link 
+              href="/register" 
+              className="inline-flex items-center px-10 py-5 rounded-lg font-bold text-xl bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1"
+            >
               <Sparkles className="mr-3 h-6 w-6" />
               Start Saving Money Now
               <ArrowRight className="ml-3 h-6 w-6" />
             </Link>
-            <button className="btn-secondary text-xl px-10 py-5 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
+            <button className="inline-flex items-center px-10 py-5 rounded-lg font-bold text-xl bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5">
               <span className="mr-2">▶️</span>
               Watch 2-Min Demo
             </button>
@@ -456,7 +457,10 @@ export default function HomePage() {
 
           {/* Final CTA */}
           <div className="mb-8">
-            <Link href="/register" className="inline-flex items-center bg-white text-gray-900 font-bold px-12 py-6 rounded-2xl hover:bg-gray-50 transition-all duration-300 text-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1">
+            <Link 
+              href="/register" 
+              className="inline-flex items-center bg-white text-gray-900 font-bold px-12 py-6 rounded-2xl hover:bg-gray-50 transition-all duration-300 text-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1"
+            >
               <Sparkles className="mr-3 h-6 w-6" />
               Start Your Free Trial Now
               <ArrowRight className="ml-3 h-6 w-6" />
@@ -517,8 +521,8 @@ export default function HomePage() {
             <div>
               <h3 className="font-bold mb-4 text-lg">Product</h3>
               <ul className="space-y-3 text-gray-400">
-                <li><Link href="/features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><Link href="/security" className="hover:text-white transition-colors">Security</Link></li>
                 <li><Link href="/integrations" className="hover:text-white transition-colors">Integrations</Link></li>
                 <li><Link href="/api" className="hover:text-white transition-colors">API</Link></li>
