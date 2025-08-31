@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import AddTransactionModal from '@/components/AddTransactionModal'; // NEW IMPORT
 import { 
   ArrowLeft,
   LogOut,
@@ -51,7 +52,7 @@ const formatCurrency = (amount: number): string => {
 };
 
 interface Transaction {
-  id: number;
+  id: string; // Changed to string for better compatibility
   description: string;
   amount: number;
   category: string;
@@ -59,6 +60,8 @@ interface Transaction {
   isExpense: boolean;
   merchant?: string;
   isRecurring?: boolean;
+  userId: string; // NEW: Added user association
+  createdAt: string; // NEW: Added timestamp
 }
 
 interface AIInsight {
@@ -79,6 +82,9 @@ export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  
+  // NEW: Add Transaction Modal State
+  const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
 
   // Protect the route - redirect if not authenticated
   useEffect(() => {
@@ -88,63 +94,88 @@ export default function DashboardPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Load dashboard data
+  // Load dashboard data including real user transactions
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       loadDashboardData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const mockTransactions: Transaction[] = [
-        { id: 1, description: 'Starbucks Coffee', amount: -5.45, category: 'Food & Dining', date: '2 hours ago', isExpense: true, merchant: 'Starbucks' },
-        { id: 2, description: 'Salary Deposit', amount: 4250.00, category: 'Income', date: 'Today', isExpense: false, merchant: 'Tech Corp Inc' },
-        { id: 3, description: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', date: 'Yesterday', isExpense: true, merchant: 'Netflix', isRecurring: true },
-        { id: 4, description: 'Uber Ride', amount: -18.50, category: 'Transportation', date: 'Yesterday', isExpense: true, merchant: 'Uber' },
-        { id: 5, description: 'Amazon Purchase', amount: -127.89, category: 'Shopping', date: '2 days ago', isExpense: true, merchant: 'Amazon.com' },
-        { id: 6, description: 'Freelance Payment', amount: 850.00, category: 'Income', date: '3 days ago', isExpense: false, merchant: 'Client XYZ' },
-      ];
+      // Load user-specific transactions from localStorage (later replace with MongoDB API)
+      const userTransactions = JSON.parse(localStorage.getItem(`user_transactions_${user?.id}`) || '[]');
       
-      const mockInsights: AIInsight[] = [
+      // If no user transactions, add welcome bonus
+      if (userTransactions.length === 0) {
+        const welcomeTransaction: Transaction = {
+          id: `welcome_${user?.id}`,
+          description: 'Welcome to AI Finance! 🎉',
+          amount: 100.00,
+          category: 'Income',
+          date: new Date().toISOString().split('T')[0],
+          isExpense: false,
+          merchant: 'AI Finance',
+          userId: user?.id || '',
+          createdAt: new Date().toISOString(),
+        };
+        
+        const updatedTransactions = [welcomeTransaction];
+        localStorage.setItem(`user_transactions_${user?.id}`, JSON.stringify(updatedTransactions));
+        setRecentTransactions(updatedTransactions);
+      } else {
+        // Sort transactions by creation date and show recent ones
+        const sortedTransactions = userTransactions
+          .sort((a: Transaction, b: Transaction) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 10);
+        setRecentTransactions(sortedTransactions);
+      }
+      
+      // Dynamic AI insights based on transaction count
+      const mockInsights: AIInsight[] = userTransactions.length === 0 ? [
+        {
+          id: 1,
+          type: 'goal',
+          title: 'Welcome to AI Finance!',
+          description: 'Start by adding your first transaction to unlock AI-powered insights',
+          action: 'Add Transaction'
+        },
+        {
+          id: 2,
+          type: 'opportunity',
+          title: 'Setup Complete',
+          description: 'Your account is ready. Connect your bank account for automatic transaction sync',
+          action: 'Link Bank Account'
+        }
+      ] : [
         {
           id: 1,
           type: 'saving',
-          title: 'Subscription Opportunity',
-          description: 'Cancel 3 unused subscriptions to save $47/month',
-          amount: 564,
-          action: 'Review Subscriptions'
+          title: 'Great Progress!',
+          description: `You've added ${userTransactions.length} transactions. Our AI is learning your spending patterns`,
+          action: 'View Analytics'
         },
         {
           id: 2,
           type: 'goal',
-          title: 'Savings Goal Progress',
-          description: 'You\'re ahead by $250 this month! Keep it up.',
-          amount: 250
+          title: 'Savings Opportunity',
+          description: 'Based on your spending, you could save an extra $150/month with smart budgeting',
+          amount: 150,
+          action: 'See Details'
         },
         {
           id: 3,
           type: 'warning',
-          title: 'Spending Alert',
-          description: 'Food expenses up 23% vs last month',
-          amount: 180,
-          action: 'See Details'
-        },
-        {
-          id: 4,
-          type: 'opportunity',
-          title: 'Investment Suggestion',
-          description: 'Move $500 to high-yield savings for extra $2.50/month',
-          amount: 30,
-          action: 'Learn More'
+          title: 'Spending Insight',
+          description: 'Your largest expense category this month helps us optimize your budget',
+          action: 'Review Categories'
         }
       ];
       
-      setRecentTransactions(mockTransactions);
       setAiInsights(mockInsights);
     } catch (error: any) {
       console.error('Dashboard data loading error:', error);
@@ -154,16 +185,60 @@ export default function DashboardPage() {
     }
   };
 
-  // Sample data for demo
+  // NEW: Handle transaction added from modal
+  const handleTransactionAdded = (newTransaction: Transaction) => {
+    // Add to the beginning of the list
+    setRecentTransactions(prev => [newTransaction, ...prev.slice(0, 9)]);
+    
+    // Update AI insights based on transaction count
+    const newCount = recentTransactions.length + 1;
+    if (newCount >= 3) {
+      setAiInsights(prev => [
+        {
+          id: Date.now(),
+          type: 'goal',
+          title: 'Building momentum! 🚀',
+          description: `You've added ${newCount} transactions. Our AI is getting smarter about your spending!`,
+          action: 'View Insights'
+        },
+        ...prev.slice(0, 2)
+      ]);
+    }
+    
+    // Refresh data to get updated totals
+    setTimeout(() => loadDashboardData(), 500);
+  };
+
+  // Calculate real totals from user transactions
+  const calculateUserStats = () => {
+    const income = recentTransactions
+      .filter(t => !t.isExpense)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    const expenses = recentTransactions
+      .filter(t => t.isExpense)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    return {
+      totalBalance: income - expenses,
+      monthlyIncome: income,
+      monthlyExpenses: expenses,
+      transactionCount: recentTransactions.length,
+    };
+  };
+
+  const userStats = calculateUserStats();
+
+  // Sample data for demo (enhanced with real user data)
   const demoData = {
-    totalBalance: 24567.82,
-    monthlyIncome: 8750.00,
-    monthlyExpenses: 4320.15,
+    totalBalance: userStats.totalBalance + 24467.82, // Add demo base amount
+    monthlyIncome: userStats.monthlyIncome || 8750.00,
+    monthlyExpenses: userStats.monthlyExpenses || 4320.15,
     savingsGoal: 50000,
-    currentSavings: 38750,
+    currentSavings: 38750 + Math.max(0, userStats.totalBalance),
     creditScore: 785,
     monthlyProgress: 12.3,
-    netWorth: 145230.50,
+    netWorth: 145230.50 + userStats.totalBalance,
   };
 
   const handleLogout = () => {
@@ -387,6 +462,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-lg text-gray-600">
+            You have <span className="font-semibold text-blue-600">{userStats.transactionCount}</span> transactions • 
             Your wealth grew by <span className="font-semibold text-green-600">+{demoData.monthlyProgress}%</span> this month
           </p>
         </div>
@@ -547,15 +623,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - UPDATED with working Add Transaction */}
       <div>
         <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <QuickActionButton
             icon={Plus}
             title="Add Transaction"
-            description="Quick entry"
-            onClick={() => toast.success('Add transaction feature coming soon! 💰')}
+            description="Record income/expense"
+            onClick={() => setIsAddTransactionModalOpen(true)} // NEW: Opens working modal
             gradient="bg-gradient-to-r from-green-500 to-emerald-600"
             isHighlight={true}
           />
@@ -589,14 +665,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Content Grid - UPDATED with real transaction data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-gray-900">Recent Transactions</h3>
-              <p className="text-sm text-gray-600">{recentTransactions.length} transactions this week</p>
+              <p className="text-sm text-gray-600">
+                {recentTransactions.length > 0 
+                  ? `${recentTransactions.length} transactions total`
+                  : 'No transactions yet'
+                }
+              </p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -617,49 +698,68 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 group cursor-pointer">
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-sm ${
-                  transaction.isExpense 
-                    ? 'bg-gradient-to-r from-red-500 to-pink-600' 
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600'
-                }`}>
-                  {transaction.isExpense ? '−' : '+'}
+            {recentTransactions.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="h-8 w-8 text-gray-400" />
                 </div>
-                
-                <div className="ml-4 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 flex items-center">
-                        {transaction.description}
-                        {transaction.isRecurring && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            Recurring
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-500">{transaction.merchant} • {transaction.date}</p>
-                    </div>
-                    <p className={`text-sm font-bold ${
-                      transaction.isExpense ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {formatCurrency(Math.abs(transaction.amount))}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
-                      {transaction.category}
-                    </span>
-                  </div>
-                </div>
-                
-                <ChevronRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2" />
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h4>
+                <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                  Start tracking your finances by adding your first transaction. Our AI will learn from your spending patterns!
+                </p>
+                <button
+                  onClick={() => setIsAddTransactionModalOpen(true)}
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold shadow-lg hover:shadow-xl"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Your First Transaction
+                </button>
               </div>
-            ))}
+            ) : (
+              recentTransactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 group cursor-pointer">
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white shadow-sm ${
+                    transaction.isExpense 
+                      ? 'bg-gradient-to-r from-red-500 to-pink-600' 
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600'
+                  }`}>
+                    {transaction.isExpense ? '−' : '+'}
+                  </div>
+                  
+                  <div className="ml-4 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 flex items-center">
+                          {transaction.description}
+                          {transaction.isRecurring && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              Recurring
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">{transaction.merchant} • {transaction.date}</p>
+                      </div>
+                      <p className={`text-sm font-bold ${
+                        transaction.isExpense ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {formatCurrency(Math.abs(transaction.amount))}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                        {transaction.category}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <ChevronRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ml-2" />
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* AI Insights */}
+        {/* AI Insights - UPDATED with dynamic content */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
@@ -668,7 +768,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">AI Insights</h3>
-                <p className="text-sm text-gray-600">{aiInsights.length} new recommendations</p>
+                <p className="text-sm text-gray-600">{aiInsights.length} recommendations</p>
               </div>
             </div>
             <button 
@@ -700,7 +800,13 @@ export default function DashboardPage() {
                     )}
                     {insight.action && (
                       <button 
-                        onClick={() => toast.success(`${insight.action} feature coming soon! 🎯`)}
+                        onClick={() => {
+                          if (insight.action === 'Add Transaction') {
+                            setIsAddTransactionModalOpen(true);
+                          } else {
+                            toast.success(`${insight.action} feature coming soon! 🎯`);
+                          }
+                        }}
                         className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
                       >
                         {insight.action} →
@@ -713,6 +819,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* NEW: Add Transaction Modal */}
+      <AddTransactionModal
+        isOpen={isAddTransactionModalOpen}
+        onClose={() => setIsAddTransactionModalOpen(false)}
+        onTransactionAdded={handleTransactionAdded}
+      />
     </div>
   );
 }
