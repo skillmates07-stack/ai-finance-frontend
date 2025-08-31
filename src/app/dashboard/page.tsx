@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 import { 
+  ArrowLeft,
+  LogOut,
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
@@ -26,9 +31,11 @@ import {
   Sparkles,
   PieChart,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  User,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 
 // ============================================================================
 // BILLION-DOLLAR DASHBOARD - AI FINANCE COMMAND CENTER
@@ -64,16 +71,29 @@ interface AIInsight {
 }
 
 export default function DashboardPage() {
+  const { user, logout, isLoading: authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+  
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
 
+  // Protect the route - redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast.error('Please sign in to access your dashboard');
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   // Load dashboard data
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (isAuthenticated) {
+      loadDashboardData();
+    }
+  }, [isAuthenticated]);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
@@ -128,7 +148,7 @@ export default function DashboardPage() {
       setAiInsights(mockInsights);
     } catch (error: any) {
       console.error('Dashboard data loading error:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data. Please refresh the page.');
     } finally {
       setIsLoading(false);
     }
@@ -145,6 +165,34 @@ export default function DashboardPage() {
     monthlyProgress: 12.3,
     netWorth: 145230.50,
   };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect screen (will redirect via useEffect)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   const MetricCard = ({ 
     title, 
@@ -174,6 +222,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setIsBalanceVisible(!isBalanceVisible)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label={isBalanceVisible ? 'Hide balance' : 'Show balance'}
               >
                 {isBalanceVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
@@ -283,12 +332,54 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
+      {/* Dashboard Navigation Header */}
+      <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center space-x-4">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Home
+          </Link>
+          <div className="h-4 w-px bg-gray-300"></div>
+          <Link 
+            href="/" 
+            className="flex items-center text-gray-900"
+          >
+            <div className="h-6 w-6 rounded bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2">
+              💰
+            </div>
+            <span className="font-semibold">AI Finance</span>
+          </Link>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              {user?.name?.charAt(0) || 'U'}
+            </div>
+            <div className="text-left hidden sm:block">
+              <p className="text-sm font-medium text-gray-700">{user?.name || 'User'}</p>
+              <p className="text-xs text-gray-500">{user?.plan || 'Free'} Plan</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="inline-flex items-center px-3 py-2 text-sm text-gray-600 hover:text-red-600 transition-colors duration-200 hover:bg-red-50 rounded-lg"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
+            Logout
+          </button>
+        </div>
+      </div>
+
       {/* Enhanced Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div className="mb-4 lg:mb-0">
           <div className="flex items-center mb-2">
             <h1 className="text-4xl font-bold text-gray-900 mr-3">
-              Good evening, Sarah! 👋
+              Good evening, {user?.name?.split(' ')[0] || 'there'}! 👋
             </h1>
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
@@ -312,12 +403,16 @@ export default function DashboardPage() {
           <button
             onClick={() => loadDashboardData()}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           
-          <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl">
+          <button 
+            onClick={() => toast.success('Export feature coming soon! 📊')}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </button>
@@ -334,7 +429,6 @@ export default function DashboardPage() {
           icon={Award}
           gradient="bg-gradient-to-r from-purple-500 to-purple-600"
           subtitle="All accounts combined"
-          isLarge={false}
         />
         
         <MetricCard
@@ -459,9 +553,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <QuickActionButton
             icon={Plus}
-            title="Add Expense"
+            title="Add Transaction"
             description="Quick entry"
-            onClick={() => toast.success('Add expense feature coming soon! 🚀')}
+            onClick={() => toast.success('Add transaction feature coming soon! 💰')}
             gradient="bg-gradient-to-r from-green-500 to-emerald-600"
             isHighlight={true}
           />
@@ -506,13 +600,19 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center space-x-2">
-              <button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+              <button 
+                onClick={() => toast.success('Filter feature coming soon! 🔍')}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
+              >
                 <Filter className="h-4 w-4 mr-1" />
                 Filter
               </button>
-              <Link href="/transactions" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200">
+              <button 
+                onClick={() => toast.success('View all transactions coming soon! 📝')}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
+              >
                 View All
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -571,7 +671,10 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">{aiInsights.length} new recommendations</p>
               </div>
             </div>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <button 
+              onClick={() => toast.success('View all insights coming soon! 🧠')}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
               View All
             </button>
           </div>
@@ -596,7 +699,10 @@ export default function DashboardPage() {
                       </p>
                     )}
                     {insight.action && (
-                      <button className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                      <button 
+                        onClick={() => toast.success(`${insight.action} feature coming soon! 🎯`)}
+                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                      >
                         {insight.action} →
                       </button>
                     )}
