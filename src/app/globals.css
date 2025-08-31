@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ============================================================================
-   BILLION-DOLLAR DESIGN SYSTEM - AI Finance Assistant
+   BILLION-DOLLAR CSS ARCHITECTURE - AI FINANCE ASSISTANT
    ============================================================================ */
 
-/* Google Fonts - Optimized for performance */
+/* Google Fonts Import - Optimized for performance */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 /* ============================================================================
-   CSS CUSTOM PROPERTIES - Design System Foundation
+   CSS CUSTOM PROPERTIES - DESIGN SYSTEM FOUNDATION
    ============================================================================ */
 :root {
   /* Primary Color Palette */
@@ -66,26 +66,6 @@
   --border-radius: 12px;
   --border-radius-lg: 16px;
   
-  /* Typography Scale */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-  
-  /* Spacing Scale */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  
   /* Animation Timing */
   --duration-fast: 150ms;
   --duration-normal: 200ms;
@@ -111,6 +91,7 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  height: 100%;
 }
 
 body {
@@ -124,6 +105,8 @@ body {
   text-rendering: optimizeLegibility;
   font-feature-settings: 'kern' 1;
   font-kerning: normal;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 /* ============================================================================
@@ -216,18 +199,22 @@ a:focus:not(:focus-visible) {
   }
 
   /* ================================
-     BUTTON SYSTEM
+     BUTTON SYSTEM - FIXED FOR CONSISTENCY
      ================================ */
   .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium text-sm;
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm;
     @apply transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
     cursor: pointer;
     user-select: none;
     text-decoration: none;
     border: 1px solid transparent;
     position: relative;
     overflow: hidden;
+    
+    /* CRITICAL FIX: Remove any default transform or selected states */
+    transform: none !important;
+    background-color: initial;
   }
   
   .btn::before {
@@ -245,24 +232,37 @@ a:focus:not(:focus-visible) {
     left: 100%;
   }
   
+  /* FIXED: Primary button with explicit background color */
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm;
+    @apply text-white shadow-sm;
+    background-color: #2563eb !important; /* Explicit blue-600 */
+    border-color: #2563eb !important;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1d4ed8 !important; /* Explicit blue-700 */
+    border-color: #1d4ed8 !important;
+    @apply shadow-md;
+  }
+  
+  .btn-primary:focus {
+    @apply ring-blue-500;
   }
   
   .btn-secondary {
-    @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-gray-500;
+    @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-gray-500 shadow-sm;
   }
   
   .btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm;
   }
   
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm;
   }
   
   .btn-warning {
-    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500 shadow-sm;
   }
   
   .btn-ghost {
@@ -307,7 +307,7 @@ a:focus:not(:focus-visible) {
 
   /* Form groups and labels */
   .form-group {
-    @apply space-y-2 mb-4;
+    @apply space-y-2 mb-6;
   }
   
   .form-label {
@@ -423,29 +423,6 @@ a:focus:not(:focus-visible) {
   .heading-hero {
     font-size: clamp(2rem, 8vw, 4rem);
   }
-
-  /* ================================
-     TABLE STYLES
-     ================================ */
-  .table {
-    @apply w-full border-collapse;
-  }
-  
-  .table th {
-    @apply bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
-  }
-  
-  .table td {
-    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
-  }
-  
-  .table tbody tr {
-    @apply border-t border-gray-200;
-  }
-  
-  .table tbody tr:hover {
-    @apply bg-gray-50;
-  }
 }
 
 /* ============================================================================
@@ -522,21 +499,6 @@ a:focus:not(:focus-visible) {
   
   .safe-right {
     padding-right: env(safe-area-inset-right);
-  }
-
-  /* ================================
-     LAYOUT UTILITIES
-     ================================ */
-  .aspect-golden {
-    aspect-ratio: 1.618 / 1;
-  }
-  
-  .aspect-video {
-    aspect-ratio: 16 / 9;
-  }
-  
-  .aspect-square {
-    aspect-ratio: 1 / 1;
   }
 }
 
@@ -681,19 +643,10 @@ a:focus:not(:focus-visible) {
   }
 }
 
-/* Large screens optimization */
-@media (min-width: 1440px) {
-  .container-ultra {
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-}
-
 /* Mobile optimization */
 @media (max-width: 640px) {
   .btn {
-    @apply px-4 py-2;
+    @apply px-4 py-2 text-sm;
   }
   
   .card {
@@ -703,28 +656,6 @@ a:focus:not(:focus-visible) {
   .heading-responsive {
     line-height: 1.2;
   }
-}
-
-/* ============================================================================
-   COMPONENT SPECIFIC OVERRIDES
-   ============================================================================ */
-
-/* Toast notifications */
-.Toaster__toast {
-  font-family: 'Inter', sans-serif !important;
-}
-
-/* Form validation states */
-.field-error input,
-.field-error textarea,
-.field-error select {
-  @apply border-red-300 focus:ring-red-500;
-}
-
-.field-success input,
-.field-success textarea,
-.field-success select {
-  @apply border-green-300 focus:ring-green-500;
 }
 
 /* Selection styling */
