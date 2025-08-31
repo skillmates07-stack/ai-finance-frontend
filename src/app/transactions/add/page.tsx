@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { useAuth } from '@/contexts/AuthContext'; // ADD THIS
 import { toast } from 'react-hot-toast';
 import { 
   Calculator, 
@@ -22,11 +23,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
-// ============================================================================
-// SMART ADD TRANSACTION FORM - Magic Experience
-// ============================================================================
-
-// ✅ Fixed: Complete TypeScript interfaces
+// Your existing interfaces remain the same...
 interface TransactionFormData {
   amount: string;
   description: string;
@@ -36,7 +33,7 @@ interface TransactionFormData {
   paymentMethod: string;
   isTaxDeductible: boolean;
   notes: string;
-  tags: string | string[]; // ✅ Fixed: Proper union type for tags
+  tags: string | string[];
   receiptUrl?: string;
 }
 
@@ -47,7 +44,7 @@ interface SmartSuggestion {
   reasoning: string;
 }
 
-// Mock data - replace with real API constants
+// Your existing constants remain the same...
 const TRANSACTION_CATEGORIES = [
   'Food & Dining',
   'Transportation',
@@ -74,13 +71,13 @@ const PAYMENT_METHODS = [
   'other'
 ];
 
-// Utility function
 const formatDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
 export default function AddTransactionPage() {
   const router = useRouter();
+  const { user } = useAuth(); // ADD THIS
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [smartSuggestion, setSmartSuggestion] = useState<SmartSuggestion | null>(null);
@@ -103,7 +100,7 @@ export default function AddTransactionPage() {
       paymentMethod: 'credit_card',
       isTaxDeductible: false,
       notes: '',
-      tags: '', // ✅ Fixed: Default as string
+      tags: '',
     },
   });
 
@@ -111,7 +108,7 @@ export default function AddTransactionPage() {
   const watchedAmount = watch('amount');
   const watchedType = watch('type');
 
-  // Smart AI categorization based on description
+  // Enhanced AI categorization
   useEffect(() => {
     if (watchedDescription && watchedDescription.length > 3) {
       generateSmartSuggestion(watchedDescription, parseFloat(watchedAmount?.toString() || '0'));
@@ -121,55 +118,90 @@ export default function AddTransactionPage() {
   }, [watchedDescription, watchedAmount]);
 
   const generateSmartSuggestion = async (description: string, amount: number) => {
-    // Simulate AI categorization (replace with actual API call)
     setTimeout(() => {
-      const suggestions: Record<string, SmartSuggestion> = {
-        'starbucks': {
+      const aiRules: Record<string, SmartSuggestion> = {
+        'starbucks|coffee|cafe': {
           category: 'Food & Dining',
           isTaxDeductible: false,
           confidence: 0.95,
           reasoning: 'Coffee shop purchase detected'
         },
-        'uber': {
+        'uber|lyft|taxi': {
           category: 'Transportation',
           isTaxDeductible: true,
           confidence: 0.90,
           reasoning: 'Business travel expense'
         },
-        'office': {
-          category: 'Business Expenses',
-          isTaxDeductible: true,
-          confidence: 0.85,
-          reasoning: 'Office-related purchase'
-        },
-        'gas': {
-          category: 'Transportation',
-          isTaxDeductible: false,
-          confidence: 0.80,
-          reasoning: 'Fuel purchase'
-        },
-        'amazon': {
+        'amazon|shopping|store': {
           category: 'Shopping',
           isTaxDeductible: false,
-          confidence: 0.75,
+          confidence: 0.85,
           reasoning: 'Online shopping detected'
         },
+        'office|supplies|equipment|meeting': {
+          category: 'Business Expenses',
+          isTaxDeductible: true,
+          confidence: 0.88,
+          reasoning: 'Business expense detected'
+        },
+        'restaurant|food|meal|lunch|dinner': {
+          category: 'Food & Dining',
+          isTaxDeductible: false,
+          confidence: 0.82,
+          reasoning: 'Restaurant purchase detected'
+        },
+        'gas|fuel|station|gasoline': {
+          category: 'Transportation',
+          isTaxDeductible: false,
+          confidence: 0.90,
+          reasoning: 'Fuel purchase detected'
+        },
+        'netflix|spotify|subscription|streaming': {
+          category: 'Entertainment',
+          isTaxDeductible: false,
+          confidence: 0.95,
+          reasoning: 'Subscription service detected'
+        },
+        'rent|mortgage|utilities|electric|water': {
+          category: 'Bills & Utilities',
+          isTaxDeductible: false,
+          confidence: 0.98,
+          reasoning: 'Utility bill detected'
+        },
+        'medical|doctor|pharmacy|health': {
+          category: 'Healthcare',
+          isTaxDeductible: false,
+          confidence: 0.92,
+          reasoning: 'Healthcare expense detected'
+        },
+        'flight|hotel|travel|vacation': {
+          category: 'Travel',
+          isTaxDeductible: true,
+          confidence: 0.87,
+          reasoning: 'Travel expense detected'
+        },
+        'salary|wage|income|paycheck|bonus': {
+          category: 'Income',
+          isTaxDeductible: false,
+          confidence: 0.95,
+          reasoning: 'Income detected'
+        }
       };
 
       const lowerDesc = description.toLowerCase();
-      const matchedKey = Object.keys(suggestions).find(key => lowerDesc.includes(key));
-      
-      if (matchedKey) {
-        const suggestion = suggestions[matchedKey];
-        setSmartSuggestion(suggestion);
-        toast.success(`AI suggests: ${suggestion.category}`, {
-          icon: '🤖',
-          duration: 3000,
-        });
+      for (const [pattern, suggestion] of Object.entries(aiRules)) {
+        if (new RegExp(pattern).test(lowerDesc)) {
+          setSmartSuggestion(suggestion);
+          toast.success(`🤖 AI suggests: ${suggestion.category}`, {
+            duration: 3000,
+          });
+          return;
+        }
       }
     }, 500);
   };
 
+  // ENHANCED: Save to localStorage with user ID
   const onSubmit = async (data: TransactionFormData) => {
     setIsLoading(true);
     
@@ -179,27 +211,43 @@ export default function AddTransactionPage() {
         ? -Math.abs(parseFloat(data.amount.toString()))
         : Math.abs(parseFloat(data.amount.toString()));
 
-      // ✅ Fixed: Proper type handling for tags
-      const processedData = {
-        ...data,
+      // Create transaction object
+      const newTransaction = {
+        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        description: data.description.trim(),
         amount,
+        category: data.category,
+        date: data.date,
+        isExpense: data.type === 'expense',
+        merchant: data.description.trim(),
+        userId: user?.id || '',
+        createdAt: new Date().toISOString(),
+        paymentMethod: data.paymentMethod,
+        isTaxDeductible: data.isTaxDeductible,
+        notes: data.notes,
         tags: typeof data.tags === 'string' 
           ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
           : Array.isArray(data.tags) 
             ? data.tags 
             : [],
+        receiptUrl: data.receiptUrl,
+        isRecurring: false,
       };
 
-      console.log('Transaction data:', processedData);
+      // Save to localStorage (later replace with MongoDB API)
+      const existingTransactions = JSON.parse(localStorage.getItem(`user_transactions_${user?.id}`) || '[]');
+      const updatedTransactions = [newTransaction, ...existingTransactions];
+      localStorage.setItem(`user_transactions_${user?.id}`, JSON.stringify(updatedTransactions));
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Transaction saved:', newTransaction);
       
-      toast.success('Transaction added successfully! 🎉', {
-        duration: 3000,
+      toast.success(`${data.type === 'expense' ? 'Expense' : 'Income'} of $${Math.abs(amount).toFixed(2)} added successfully! 🎉`, {
+        duration: 4000,
       });
       
-      router.push('/transactions');
+      // Reset form and redirect
+      reset();
+      router.push('/dashboard');
       
     } catch (error: any) {
       console.error('Failed to create transaction:', error);
@@ -209,6 +257,7 @@ export default function AddTransactionPage() {
     }
   };
 
+  // Your existing voice input function...
   const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window)) {
       toast.error('Voice recognition not supported in this browser');
@@ -225,7 +274,14 @@ export default function AddTransactionPage() {
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setValue('description', transcript);
-      toast.success('Voice input captured!');
+      
+      // Enhanced: Try to extract amount from voice input
+      const amountMatch = transcript.match(/\$?(\d+\.?\d*)/);
+      if (amountMatch) {
+        setValue('amount', amountMatch[1]);
+      }
+      
+      toast.success('Voice input captured! 🎤');
     };
 
     recognition.onerror = () => {
@@ -239,18 +295,39 @@ export default function AddTransactionPage() {
     recognition.start();
   };
 
-  const handleReceiptUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Enhanced receipt upload
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setUploadedReceipt(file);
-      toast.success('Receipt uploaded! Processing...', { icon: '📄' });
+      toast.success('Receipt uploaded! Processing with AI... 🤖', { icon: '📄' });
       
-      // Simulate receipt OCR processing
+      // Simulate advanced OCR processing
       setTimeout(() => {
-        setValue('description', 'Receipt: Restaurant Bill');
-        setValue('amount', '45.67');
-        setValue('category', 'Food & Dining');
-        toast.success('Receipt processed successfully!');
+        // Mock OCR data based on filename for demo
+        const mockData = {
+          description: file.name.toLowerCase().includes('starbucks') 
+            ? 'Starbucks Coffee Purchase'
+            : file.name.toLowerCase().includes('gas') 
+              ? 'Gas Station Fill-up'
+              : file.name.toLowerCase().includes('restaurant')
+                ? 'Restaurant Dinner'
+                : 'Receipt Purchase',
+          amount: (Math.random() * 50 + 5).toFixed(2),
+          category: file.name.toLowerCase().includes('starbucks') || file.name.toLowerCase().includes('restaurant')
+            ? 'Food & Dining'
+            : file.name.toLowerCase().includes('gas')
+              ? 'Transportation'
+              : 'Other',
+          merchant: file.name.toLowerCase().includes('starbucks') 
+            ? 'Starbucks'
+            : 'Local Business'
+        };
+        
+        setValue('description', mockData.description);
+        setValue('amount', mockData.amount);
+        setValue('category', mockData.category);
+        toast.success('✨ Receipt processed! Data extracted automatically');
       }, 2000);
     }
   };
@@ -260,7 +337,7 @@ export default function AddTransactionPage() {
       setValue('category', smartSuggestion.category);
       setValue('isTaxDeductible', smartSuggestion.isTaxDeductible);
       setSmartSuggestion(null);
-      toast.success('AI suggestion applied!');
+      toast.success('AI suggestion applied! 🎯');
     }
   };
 
@@ -268,13 +345,14 @@ export default function AddTransactionPage() {
     setSmartSuggestion(null);
   };
 
+  // Your existing JSX remains exactly the same, just add this at the top:
   return (
     <div className="p-6 max-w-2xl mx-auto bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center mb-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard')} // CHANGED: Always go back to dashboard
             className="btn-ghost mr-4"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -288,6 +366,7 @@ export default function AddTransactionPage() {
         </div>
       </div>
 
+      {/* Rest of your existing JSX code stays exactly the same... */}
       {/* Smart AI Suggestion */}
       {smartSuggestion && (
         <div className="card mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -382,7 +461,7 @@ export default function AddTransactionPage() {
 
         <button
           type="button"
-          onClick={() => toast.success('Camera feature coming soon!')}
+          onClick={() => toast.success('Camera feature coming soon! 📸')}
           className="card text-left hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
         >
           <div className="flex items-center">
@@ -397,8 +476,9 @@ export default function AddTransactionPage() {
         </button>
       </div>
 
-      {/* Main Form */}
+      {/* Main Form - Your existing form code stays exactly the same */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* All your existing form fields remain unchanged */}
         <div className="card">
           {/* Transaction Type */}
           <div className="mb-6">
@@ -629,7 +709,7 @@ export default function AddTransactionPage() {
         <div className="flex items-center space-x-4">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard')}
             disabled={isLoading}
             className="btn-secondary flex-1"
           >
