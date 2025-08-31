@@ -1,11 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from '@/contexts/AuthContext';
 import './globals.css';
-
-// ============================================================================
-// ENTERPRISE-GRADE ROOT LAYOUT - SEO & Performance Optimized
-// ============================================================================
 
 // Font optimization with proper fallbacks
 const inter = Inter({ 
@@ -26,9 +23,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: {
     template: '%s | AI Finance Assistant',
-    default: 'AI Finance Assistant - Your Personal CFO',
+    default: 'AI Finance Assistant - Your AI-Powered Personal CFO',
   },
-  description: 'Transform your financial life with AI-powered expense tracking, smart categorization, and intelligent insights. Built for freelancers, entrepreneurs, and anyone who wants to master their money.',
+  description: 'Transform your financial life with AI-powered expense tracking, smart categorization, and intelligent insights. Join 50,000+ users saving money with our advanced financial assistant.',
   keywords: [
     'personal finance',
     'ai finance',
@@ -36,27 +33,27 @@ export const metadata: Metadata = {
     'budgeting app',
     'financial assistant',
     'money management',
-    'freelancer finance',
     'smart budgeting',
     'ai categorization',
-    'financial planning'
+    'financial planning',
+    'wealth building'
   ],
-  authors: [{ name: 'AI Finance Team' }],
+  authors: [{ name: 'AI Finance Team', url: 'https://aifinance.app' }],
   creator: 'AI Finance Assistant',
-  publisher: 'AI Finance Assistant',
+  publisher: 'AI Finance Inc.',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ai-finance-frontend.netlify.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://aifinance.app'),
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: '/',
     siteName: 'AI Finance Assistant',
-    title: 'AI Finance Assistant - Your Personal CFO',
-    description: 'Transform your financial life with AI-powered expense tracking and intelligent insights.',
+    title: 'AI Finance Assistant - Your AI-Powered Personal CFO',
+    description: 'Transform your financial life with AI-powered expense tracking and intelligent insights. Join 50,000+ users building wealth.',
     images: [
       {
         url: '/og-image.jpg',
@@ -68,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Finance Assistant - Your Personal CFO',
+    title: 'AI Finance Assistant - Your AI-Powered Personal CFO',
     description: 'Transform your financial life with AI-powered expense tracking and intelligent insights.',
     images: ['/og-image.jpg'],
     creator: '@AIFinanceApp',
@@ -121,10 +118,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
       <head>
-        {/* ✅ Removed problematic font preload that was causing 404s */}
-        
         {/* Critical resource hints */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
@@ -149,12 +144,6 @@ export default function RootLayout({
         
         {/* Performance optimization */}
         <meta httpEquiv="x-dns-prefetch-control" content="on" />
-        
-        {/* Prevent zoom on form inputs (iOS) */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-        />
       </head>
       
       <body className="font-inter antialiased bg-gray-50 selection:bg-blue-100 selection:text-blue-900 min-h-screen">
@@ -166,57 +155,64 @@ export default function RootLayout({
           Skip to main content
         </a>
         
-        {/* Main app content */}
-        <div id="main-content" className="relative">
-          {children}
-        </div>
-        
-        {/* Global toast notifications */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#ffffff',
-              color: '#1f2937',
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-              fontFamily: 'var(--font-inter)',
-              fontSize: '14px',
-              fontWeight: '500',
-              maxWidth: '400px',
-              padding: '12px 16px',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
-              },
+        {/* Auth Provider wraps entire app */}
+        <AuthProvider>
+          {/* Main app content */}
+          <div id="main-content" className="relative">
+            {children}
+          </div>
+          
+          {/* Global toast notifications */}
+          <Toaster
+            position="top-right"
+            reverseOrder={false}
+            gutter={8}
+            containerClassName=""
+            containerStyle={{}}
+            toastOptions={{
+              duration: 4000,
               style: {
-                border: '1px solid #d1fae5',
-                background: '#f0fdf4',
+                background: '#ffffff',
+                color: '#1f2937',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                fontFamily: 'var(--font-inter)',
+                fontSize: '14px',
+                fontWeight: '500',
+                maxWidth: '400px',
+                padding: '12px 16px',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#ffffff',
+                },
+                style: {
+                  border: '1px solid #d1fae5',
+                  background: '#f0fdf4',
+                },
               },
-              style: {
-                border: '1px solid #fecaca',
-                background: '#fef2f2',
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#ffffff',
+                },
+                style: {
+                  border: '1px solid #fecaca',
+                  background: '#fef2f2',
+                },
               },
-            },
-            loading: {
-              iconTheme: {
-                primary: '#3b82f6',
-                secondary: '#ffffff',
+              loading: {
+                iconTheme: {
+                  primary: '#3b82f6',
+                  secondary: '#ffffff',
+                },
               },
-            },
-          }}
-        />
-        
+            }}
+          />
+        </AuthProvider>
+
         {/* Development indicator */}
         {process.env.NODE_ENV === 'development' && (
           <div className="fixed bottom-4 right-4 z-50 opacity-60 hover:opacity-100 transition-opacity duration-200">
@@ -234,7 +230,9 @@ export default function RootLayout({
                 // Performance monitoring initialization
                 if ('serviceWorker' in navigator) {
                   window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js');
+                    navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    });
                   });
                 }
                 
@@ -242,6 +240,7 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
+                gtag('config', 'GA_TRACKING_ID');
               `,
             }}
           />
