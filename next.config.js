@@ -1,11 +1,11 @@
 /**
- * BILLION-DOLLAR NEXT.JS CONFIGURATION - CORRECTED VERSION
+ * BILLION-DOLLAR NEXT.JS CONFIGURATION - OPTIMIZED VERSION
  * 
- * This configuration fixes:
- * - Emotion JSX runtime issues
- * - Invalid configuration options
- * - Edge Runtime compatibility problems
- * - Production deployment optimizations
+ * This configuration:
+ * - Enables SWC for maximum performance (no Babel conflicts)
+ * - Supports next/font without issues
+ * - Optimizes for enterprise deployment
+ * - Ensures tailwind-merge compatibility
  * 
  * @type {import('next').NextConfig}
  */
@@ -15,17 +15,14 @@ const nextConfig = {
   // ========================================
   
   experimental: {
-    // CRITICAL: Disable strict route checking to prevent build failures
+    // Disable strict route checking to prevent build failures
     typedRoutes: false,
     
     // Server Components optimizations
     serverComponentsExternalPackages: [
       'lucide-react',
       '@headlessui/react',
-      '@heroicons/react',
-      '@emotion/react',
-      '@emotion/styled',
-      '@emotion/server'
+      '@heroicons/react'
     ],
     
     // Optimize bundle size by tree-shaking unused code
@@ -34,7 +31,9 @@ const nextConfig = {
       'date-fns',
       'lodash',
       '@headlessui/react',
-      '@heroicons/react'
+      '@heroicons/react',
+      'tailwind-merge',
+      'clsx'
     ],
     
     // Enable webpack build worker for better performance
@@ -48,7 +47,7 @@ const nextConfig = {
   // Enable React strict mode for better error detection
   reactStrictMode: true,
   
-  // Use SWC for faster minification and transpilation
+  // Use SWC for faster compilation (NO BABEL CONFLICTS)
   swcMinify: true,
   
   // Enable gzip compression
@@ -87,7 +86,6 @@ const nextConfig = {
   // ========================================
   
   images: {
-    // Configure allowed image domains for security
     remotePatterns: [
       {
         protocol: 'https',
@@ -109,20 +107,15 @@ const nextConfig = {
       }
     ],
     
-    // Image formats to support
     formats: ['image/webp', 'image/avif'],
-    
-    // Image sizes for responsive loading
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    
-    // Image optimization settings
-    minimumCacheTTL: 31536000, // 1 year caching
-    dangerouslyAllowSVG: false, // Security: disable SVG optimization
+    minimumCacheTTL: 31536000,
+    dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"
   },
 
   // ========================================
-  // REDIRECTS AND REWRITES
+  // REDIRECTS FOR SEO
   // ========================================
   
   async redirects() {
@@ -146,13 +139,12 @@ const nextConfig = {
   },
 
   // ========================================
-  // HEADERS FOR SECURITY & PERFORMANCE
+  // SECURITY HEADERS
   // ========================================
   
   async headers() {
     return [
       {
-        // Apply security headers to all routes
         source: '/(.*)',
         headers: [
           {
@@ -176,16 +168,6 @@ const nextConfig = {
             value: 'origin-when-cross-origin'
           }
         ],
-      },
-      {
-        // Cache static assets aggressively
-        source: '/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
       }
     ];
   },
@@ -211,21 +193,11 @@ const nextConfig = {
       crypto: false,
     };
     
-    // Add bundle analyzer in development
-    if (!dev && !isServer && process.env.ANALYZE === 'true') {
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          __DEV__: JSON.stringify(dev),
-          __BUILD_ID__: JSON.stringify(buildId),
-        })
-      );
-    }
-    
     return config;
   },
 
   // ========================================
-  // COMPILER OPTIMIZATIONS (EMOTION REMOVED)
+  // COMPILER OPTIMIZATIONS (SWC ENABLED)
   // ========================================
   
   compiler: {
@@ -234,8 +206,7 @@ const nextConfig = {
       exclude: ['error', 'warn']
     } : false,
     
-    // REMOVED: Emotion compiler settings to prevent JSX runtime conflicts
-    // emotion: false, // Explicitly disabled to prevent conflicts
+    // NO BABEL OR EMOTION CONFLICTS - Pure SWC optimization
   },
 
   // ========================================
@@ -251,11 +222,7 @@ const nextConfig = {
   })
 };
 
-// ========================================
-// CONDITIONAL CONFIGURATIONS
-// ========================================
-
-// Enable bundle analyzer if ANALYZE=true
+// Enable bundle analyzer if needed
 if (process.env.ANALYZE === 'true') {
   const withBundleAnalyzer = require('@next/bundle-analyzer')({
     enabled: true,
