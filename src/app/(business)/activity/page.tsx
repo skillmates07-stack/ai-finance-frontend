@@ -619,12 +619,12 @@ export default function BusinessActivityPage() {
                           )}
                           
                           {activity.metadata?.approvalId && activity.status === 'warning' && (
-                            <Link
-                              href="/business/expenses/approvals"
-                              className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium hover:bg-orange-200 transition-colors"
-                            >
-                              Review
-                            </Link>
+                           <Link
+  href="/expenses/approvals"
+  className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium hover:bg-orange-200 transition-colors"
+>
+  Review
+</Link>
                           )}
                           
                           <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
