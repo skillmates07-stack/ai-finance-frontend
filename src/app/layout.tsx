@@ -4,37 +4,19 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import './globals.css';
 
-/**
- * BILLION-DOLLAR ROOT LAYOUT
- * 
- * This is the foundation of our entire application. Every page renders inside this layout.
- * 
- * Key features:
- * - Optimized Google Fonts loading for performance
- * - Global authentication state management
- * - Consistent toast notification system
- * - SEO-optimized metadata
- * - Performance monitoring setup
- * - Analytics integration ready
- */
-
-// Font optimization - preload critical fonts for better performance
 const inter = Inter({ 
   subsets: ['latin'],
-  display: 'swap', // Better loading performance
+  display: 'swap',
   variable: '--font-inter',
 });
 
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
   variable: '--font-poppins',
 });
 
-/**
- * SEO Metadata - Critical for organic growth and professional appearance
- */
 export const metadata: Metadata = {
   title: {
     default: 'AI Finance - Smart Financial Management for Everyone',
@@ -98,23 +80,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: process.env.GOOGLE_VERIFICATION_CODE,
-    yandex: process.env.YANDEX_VERIFICATION_CODE,
-  },
   category: 'finance',
 };
 
-/**
- * Root Layout Component
- * 
- * This component wraps every page in our application and provides:
- * - Global font variables
- * - Authentication context
- * - Toast notification system
- * - Global error boundaries (future enhancement)
- * - Analytics initialization (future enhancement)
- */
 export default function RootLayout({
   children,
 }: {
@@ -123,41 +91,25 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <head>
-        {/* Preload critical resources for better performance */}
         <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        
-        {/* DNS prefetch for external services */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//analytics.google.com" />
         
-        {/* Security headers via meta tags as fallback */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta httpEquiv="X-Frame-Options" content="DENY" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        
-        {/* Viewport meta for responsive design */}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        
-        {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#3b82f6" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
         
-        {/* Apple touch icon */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body className={inter.className}>
-        {/* Global error boundary (future enhancement) */}
-        {/* <ErrorBoundary fallback={<GlobalErrorFallback />}> */}
-        
-        {/* Authentication provider wraps entire app */}
         <AuthProvider>
-          {/* Main app content */}
           {children}
-          
-          {/* Global toast notifications */}
           <Toaster 
             position="top-right"
             toastOptions={{
@@ -198,22 +150,7 @@ export default function RootLayout({
               },
             }}
           />
-          
-          {/* Performance monitoring (future enhancement) */}
-          {/* <PerformanceMonitor /> */}
-          
-          {/* Analytics (future enhancement) */}
-          {/* <Analytics /> */}
-          
-          {/* Accessibility improvements (future enhancement) */}
-          {/* <A11yAnnouncer /> */}
-          
         </AuthProvider>
-        
-        {/* </ErrorBoundary> */}
-        
-        {/* Service Worker registration (future enhancement) */}
-        {/* <ServiceWorkerRegistration /> */}
       </body>
     </html>
   );
