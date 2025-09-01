@@ -16,6 +16,7 @@ import {
   TrendingDown,
   AlertTriangle, 
   CheckCircle, 
+  CheckSquare,
   Clock,
   Award,
   Shield,
