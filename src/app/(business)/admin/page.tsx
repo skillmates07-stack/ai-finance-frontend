@@ -776,7 +776,7 @@ export default function BusinessAdminPage() {
             {hasFeature('APPROVAL_WORKFLOWS') && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <Link
-                  href="/business/expenses/approvals"
+                  href={"/business/expenses/approvals" as any}
                   className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   View all approvals
