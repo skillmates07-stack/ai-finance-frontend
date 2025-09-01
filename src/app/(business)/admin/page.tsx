@@ -622,7 +622,7 @@ export default function BusinessAdminPage() {
                 Filter
               </button>
               <Link 
-                href="/business/activity"
+                href={"/business/activity" as any}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors shadow-lg"
               >
                 View All
