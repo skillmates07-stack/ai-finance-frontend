@@ -580,4 +580,83 @@ export default function ConsumerDashboardPage() {
           <div className="space-y-4">
             {aiInsights.map((insight, index) => (
               <div key={insight.id} className={`p-4 rounded-xl border ${
-                insight.priority === 'high
+                insight.priority === 'high' 
+                  ? 'bg-blue-50 border-blue-200' 
+                  : insight.priority === 'medium'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-1">
+                      {insight.priority === 'high' && <AlertTriangle className="h-4 w-4 text-blue-600 mr-1" />}
+                      {insight.priority === 'medium' && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
+                      <h4 className="text-sm font-semibold text-gray-900">{insight.title}</h4>
+                    </div>
+                    <p className="text-xs text-gray-700 mb-2">{insight.description}</p>
+                    
+                    {insight.potentialSavings && (
+                      <div className="flex items-center mb-2">
+                        <DollarSign className="h-3 w-3 text-green-600 mr-1" />
+                        <span className="text-xs font-medium text-green-700">
+                          Save up to {formatCurrency(insight.potentialSavings)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {insight.actionable && insight.actionText && (
+                      <button 
+                        onClick={() => {
+                          if (insight.actionText === 'Add Transaction') {
+                            router.push('/transactions/add');
+                          } else if (insight.actionText === 'Create Goal') {
+                            router.push('/goals');
+                          } else if (insight.actionText === 'Explore Investments') {
+                            router.push('/investments');
+                          } else {
+                            toast.success(`${insight.actionText} feature coming soon! 🎯`);
+                          }
+                        }}
+                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        {insight.actionText} →
+                      </button>
+                    )}
+                    
+                    {hasFeature('AI_BUDGET_OPTIMIZER') && (
+                      <div className="flex items-center mt-2">
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          AI Confidence: {Math.round(insight.confidence * 100)}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Upgrade prompt for more insights */}
+            {!hasFeature('AI_BUDGET_OPTIMIZER') && (
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                <div className="flex items-center mb-2">
+                  <Brain className="h-5 w-5 text-purple-600 mr-2" />
+                  <h4 className="text-sm font-semibold text-purple-900">Unlock AI Power</h4>
+                </div>
+                <p className="text-xs text-purple-700 mb-3">
+                  Get personalized AI insights, spending predictions, and smart recommendations.
+                </p>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center text-xs font-medium text-purple-600 hover:text-purple-800"
+                >
+                  Upgrade to Pro →
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
