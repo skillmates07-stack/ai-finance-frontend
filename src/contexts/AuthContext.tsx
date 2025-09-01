@@ -5,23 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import type { User, FeatureFlags } from '@/types';
 
-/**
- * BILLION-DOLLAR AUTHENTICATION CONTEXT
- * 
- * This is the heart of our user management system. It handles:
- * - Smart account type detection (consumer vs business)
- * - Feature flag management based on user plan
- * - Secure session management with cookies
- * - Automatic routing based on user type
- * - Complete user lifecycle (login, register, logout, updates)
- * 
- * Security features:
- * - JWT-like token system
- * - Secure cookie storage
- * - Session timeout handling
- * - Device fingerprinting (future enhancement)
- */
-
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
@@ -43,19 +26,14 @@ interface RegisterData {
   accountType: 'consumer' | 'business';
   companyName?: string;
   monthlyIncome?: number;
-  acceptTerms: boolean;         // Legal compliance
-  marketingOptIn?: boolean;     // GDPR compliance
+  acceptTerms: boolean;
+  marketingOptIn?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Feature flag configuration based on user plan and account type
- * This drives our freemium business model and enterprise sales
- */
 const getFeatureFlags = (user: User | null): FeatureFlags => {
   if (!user) {
-    // Guest users get no features
     return {
       INVESTMENT_TRACKING: false,
       AI_BUDGET_OPTIMIZER: false,
@@ -87,7 +65,6 @@ const getFeatureFlags = (user: User | null): FeatureFlags => {
   }
 
   const baseFlags = {
-    // Free features for all users
     INVESTMENT_TRACKING: false,
     AI_BUDGET_OPTIMIZER: false,
     VOICE_TRANSACTIONS: false,
@@ -116,7 +93,7 @@ const getFeatureFlags = (user: User | null): FeatureFlags => {
     INTERNATIONAL_TRANSFERS: false,
   };
 
-  // Consumer feature unlocking based on plan
+  // Consumer feature unlocking
   if (user.accountType === 'consumer') {
     if (user.plan === 'pro' || user.plan === 'premium') {
       baseFlags.INVESTMENT_TRACKING = true;
@@ -139,7 +116,7 @@ const getFeatureFlags = (user: User | null): FeatureFlags => {
     }
   }
   
-  // Business feature unlocking based on plan
+  // Business feature unlocking
   if (user.accountType === 'business') {
     if (user.plan === 'pro' || user.plan === 'enterprise') {
       baseFlags.TEAM_MANAGEMENT = true;
@@ -175,10 +152,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user;
   const featureFlags = getFeatureFlags(user);
 
-  /**
-   * Check authentication state on app load
-   * Handles refresh tokens and session validation
-   */
   useEffect(() => {
     checkAuthState();
   }, []);
@@ -190,12 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const tokenExpiry = localStorage.getItem('aifinance_token_expiry');
       
       if (savedUser && authToken && tokenExpiry) {
-        // Check if token is expired
         const expiryTime = parseInt(tokenExpiry);
         const currentTime = Date.now();
         
         if (currentTime > expiryTime) {
-          // Token expired, clear storage
           localStorage.removeItem('aifinance_user');
           localStorage.removeItem('aifinance_token');
           localStorage.removeItem('aifinance_token_expiry');
@@ -206,13 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = JSON.parse(savedUser);
         if (userData.id && userData.email && userData.accountType) {
           setUser(userData);
-          
-          // Set cookies for middleware
           setAuthCookies(userData.accountType, authToken);
-          
-          // TODO: In production, validate token with backend
-          // const isValidToken = await validateTokenWithBackend(authToken);
-          // if (!isValidToken) { /* handle invalid token */ }
         }
       }
     } catch (error) {
@@ -223,15 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Smart login with account type detection
-   * Handles business email patterns and creates appropriate user profiles
-   */
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Input validation
       if (!email || !password) {
         toast.error('Please enter both email and password');
         return false;
@@ -242,11 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // Simulate API call with realistic delay
-      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Smart account type detection
       const accountType = detectAccountType(email);
 
       const userData: User = {
@@ -259,7 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastLoginAt: new Date().toISOString(),
         avatar: generateAvatarUrl(email),
         
-        // Consumer-specific defaults
         ...(accountType === 'consumer' && {
           monthlyIncome: 5000,
           creditScore: 750,
@@ -267,7 +223,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           riskProfile: 'moderate' as const
         }),
         
-        // Business-specific defaults
         ...(accountType === 'business' && {
           companyName: generateCompanyName(email),
           companySize: 25,
@@ -277,17 +232,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       };
       
-      // Generate secure token with expiry
       const authToken = generateSecureToken();
-      const tokenExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+      const tokenExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
       
-      // Store user data securely
       setUser(userData);
       localStorage.setItem('aifinance_user', JSON.stringify(userData));
       localStorage.setItem('aifinance_token', authToken);
       localStorage.setItem('aifinance_token_expiry', tokenExpiry.toString());
       
-      // Set cookies for middleware
       setAuthCookies(userData.accountType, authToken);
       
       toast.success(`Welcome ${userData.accountType === 'business' ? 'back to your business dashboard' : 'to AI Finance'}! 🎉`);
@@ -301,23 +253,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Comprehensive user registration with validation
-   * Handles both consumer and business account creation
-   */
   const register = async (userData: RegisterData): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Comprehensive validation
       const validation = validateRegistrationData(userData);
       if (!validation.isValid) {
         toast.error(validation.error || 'Please check your information');
         return false;
       }
 
-      // Simulate API call
-      // TODO: Replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const newUser: User = {
@@ -330,7 +275,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastLoginAt: new Date().toISOString(),
         avatar: generateAvatarUrl(userData.email),
         
-        // Consumer-specific setup
         ...(userData.accountType === 'consumer' && {
           monthlyIncome: userData.monthlyIncome || 0,
           creditScore: 720,
@@ -338,7 +282,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           riskProfile: 'moderate' as const
         }),
         
-        // Business-specific setup
         ...(userData.accountType === 'business' && {
           companyName: userData.companyName || `${userData.name} Company`,
           companySize: 10,
@@ -359,10 +302,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthCookies(newUser.accountType, authToken);
       
       toast.success('Account created successfully! Welcome to AI Finance! 🚀');
-      
-      // TODO: Send welcome email
-      // TODO: Track registration event for analytics
-      
       return true;
     } catch (error) {
       console.error('Registration error:', error);
@@ -373,10 +312,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Account type switching for users who need both personal and business
-   * Premium feature for enterprise customers
-   */
   const switchAccountType = (type: 'consumer' | 'business') => {
     if (!user) return;
     
@@ -385,7 +320,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accountType: type,
       plan: type === 'business' ? 'pro' : user.plan,
       
-      // Reset type-specific fields appropriately
       ...(type === 'consumer' && {
         monthlyIncome: user.monthlyIncome || 5000,
         riskProfile: user.riskProfile || 'moderate',
@@ -404,7 +338,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(updatedUser);
     localStorage.setItem('aifinance_user', JSON.stringify(updatedUser));
     
-    // Update cookies
     const authToken = localStorage.getItem('aifinance_token');
     if (authToken) {
       setAuthCookies(type, authToken);
@@ -412,7 +345,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     toast.success(`Switched to ${type === 'consumer' ? 'Personal' : 'Business'} account! 🔄`);
     
-    // Redirect to appropriate dashboard
     const redirectPath = type === 'consumer' ? '/dashboard' : '/business/admin';
     router.push(redirectPath);
   };
@@ -423,9 +355,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updatedUser = { ...user, ...userData };
     setUser(updatedUser);
     localStorage.setItem('aifinance_user', JSON.stringify(updatedUser));
-    
-    // TODO: Sync with backend
-    // syncUserWithBackend(updatedUser);
   };
 
   const refreshUser = async () => {
@@ -433,8 +362,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // TODO: Fetch fresh user data from backend
-      // const freshUserData = await fetchUserFromBackend(user.id);
-      // setUser(freshUserData);
     } catch (error) {
       console.error('Failed to refresh user:', error);
     }
@@ -447,10 +374,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       toast.success('Logged out successfully! See you soon! 👋');
       router.push('/');
-      
-      // TODO: Invalidate token on backend
-      // invalidateTokenOnBackend(authToken);
-      
     } catch (error) {
       console.error('Logout error:', error);
       setUser(null);
@@ -462,8 +385,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return featureFlags[feature] || false;
   };
 
-  // Helper functions for clean code organization
-  
+  // Helper functions
   const detectAccountType = (email: string): 'consumer' | 'business' => {
     const businessIndicators = [
       'business', 'company', 'corp', 'llc', 'inc', 'ltd',
@@ -500,7 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const setAuthCookies = (accountType: string, token: string) => {
-    const maxAge = 7 * 24 * 60 * 60; // 7 days
+    const maxAge = 7 * 24 * 60 * 60;
     document.cookie = `user_type=${accountType}; path=/; max-age=${maxAge}; secure; samesite=strict`;
     document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
   };
@@ -570,5 +492,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export type { User, RegisterData, FeatureFlags };
