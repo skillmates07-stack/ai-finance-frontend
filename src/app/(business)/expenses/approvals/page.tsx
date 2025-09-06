@@ -42,7 +42,7 @@ import {
  * BILLION-DOLLAR EXPENSE APPROVAL DASHBOARD
  * 
  * Features:
- * - Multi-level approval workflows
+ * - Multi-level approval workflows with proper TypeScript typing
  * - Real-time approval status tracking  
  * - Bulk approval capabilities
  * - Advanced filtering and search
@@ -54,6 +54,10 @@ import {
  * - Integration with accounting systems
  * - Professional Fortune 500 UI design
  */
+
+// Define exact union types for type safety
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'requires_review';
+export type ApprovalPriority = 'low' | 'medium' | 'high' | 'critical';
 
 interface ApprovalRequest {
   id: string;
@@ -68,8 +72,8 @@ interface ApprovalRequest {
     avatar: string;
   };
   submittedAt: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'pending' | 'approved' | 'rejected' | 'requires_review';
+  priority: ApprovalPriority;
+  status: ApprovalStatus; // Now properly typed
   approvalLevel: number;
   maxApprovalLevel: number;
   attachments: number;
@@ -90,7 +94,7 @@ export default function ExpenseApprovalsPage() {
   const { user, hasFeature } = useAuth();
   const router = useRouter();
   
-  // State management
+  // State management with proper typing
   const [isLoading, setIsLoading] = useState(true);
   const [approvalRequests, setApprovalRequests] = useState<ApprovalRequest[]>([]);
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
@@ -137,12 +141,12 @@ export default function ExpenseApprovalsPage() {
     }
   };
 
-  // Generate realistic approval requests
+  // Generate realistic approval requests with proper typing
   const generateApprovalRequests = (): ApprovalRequest[] => {
     const categories = ['Software', 'Marketing', 'Travel', 'Equipment', 'Consulting', 'Training', 'Office Supplies'];
     const departments = ['Engineering', 'Marketing', 'Sales', 'Operations', 'HR', 'Finance'];
-    const priorities: Array<'low' | 'medium' | 'high' | 'critical'> = ['low', 'medium', 'high', 'critical'];
-    const statuses: Array<'pending' | 'approved' | 'rejected' | 'requires_review'> = ['pending', 'approved', 'rejected', 'requires_review'];
+    const priorities: ApprovalPriority[] = ['low', 'medium', 'high', 'critical'];
+    const statuses: ApprovalStatus[] = ['pending', 'approved', 'rejected', 'requires_review'];
     
     return Array.from({ length: 25 }, (_, i) => ({
       id: `REQ-${String(i + 1001).padStart(4, '0')}`,
@@ -158,7 +162,7 @@ export default function ExpenseApprovalsPage() {
       },
       submittedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
       priority: priorities[i % priorities.length],
-      status: statuses[i % statuses.length],
+      status: statuses[i % statuses.length], // Properly typed
       approvalLevel: Math.floor(Math.random() * 3) + 1,
       maxApprovalLevel: 3,
       attachments: Math.floor(Math.random() * 5),
@@ -185,26 +189,29 @@ export default function ExpenseApprovalsPage() {
     };
   };
 
-  // Handle approval actions
+  // Handle approval actions with proper typing
   const handleApproval = async (requestId: string, action: 'approve' | 'reject') => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // FIXED: Properly type the status values
+      const newStatus: ApprovalStatus = action === 'approve' ? 'approved' : 'rejected';
+      
       setApprovalRequests(prev => 
         prev.map(req => 
           req.id === requestId 
-            ? { ...req, status: action === 'approve' ? 'approved' : 'rejected' }
+            ? { ...req, status: newStatus } // Now properly typed
             : req
         )
       );
       
       toast.success(`Request ${requestId} ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
       
-      // Recalculate metrics
+      // Recalculate metrics - now with properly typed array
       const updatedRequests = approvalRequests.map(req => 
         req.id === requestId 
-          ? { ...req, status: action === 'approve' ? 'approved' : 'rejected' }
+          ? { ...req, status: newStatus }
           : req
       );
       setMetrics(calculateMetrics(updatedRequests));
@@ -214,7 +221,7 @@ export default function ExpenseApprovalsPage() {
     }
   };
 
-  // Handle bulk actions
+  // Handle bulk actions with proper typing
   const handleBulkAction = async (action: 'approve' | 'reject') => {
     if (selectedRequests.length === 0) {
       toast.error('Please select requests to process.');
@@ -225,10 +232,13 @@ export default function ExpenseApprovalsPage() {
       // Simulate bulk API call
       await new Promise(resolve => setTimeout(resolve, 1200));
       
+      // FIXED: Properly type the status values
+      const newStatus: ApprovalStatus = action === 'approve' ? 'approved' : 'rejected';
+      
       setApprovalRequests(prev => 
         prev.map(req => 
           selectedRequests.includes(req.id)
-            ? { ...req, status: action === 'approve' ? 'approved' : 'rejected' }
+            ? { ...req, status: newStatus } // Now properly typed
             : req
         )
       );
@@ -256,22 +266,24 @@ export default function ExpenseApprovalsPage() {
       return a.title.localeCompare(b.title) * direction;
     });
 
-  // Get status color
-  const getStatusColor = (status: string) => {
+  // Get status color with proper typing
+  const getStatusColor = (status: ApprovalStatus): string => {
     switch (status) {
       case 'approved': return 'text-green-700 bg-green-100';
       case 'rejected': return 'text-red-700 bg-red-100';
       case 'requires_review': return 'text-yellow-700 bg-yellow-100';
-      default: return 'text-blue-700 bg-blue-100';
+      case 'pending': return 'text-blue-700 bg-blue-100';
+      default: return 'text-gray-700 bg-gray-100';
     }
   };
 
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
+  // Get priority color with proper typing
+  const getPriorityColor = (priority: ApprovalPriority): string => {
     switch (priority) {
       case 'critical': return 'text-red-700 bg-red-100 animate-pulse';
       case 'high': return 'text-orange-700 bg-orange-100';
       case 'medium': return 'text-yellow-700 bg-yellow-100';
+      case 'low': return 'text-gray-700 bg-gray-100';
       default: return 'text-gray-700 bg-gray-100';
     }
   };
@@ -703,7 +715,7 @@ export default function ExpenseApprovalsPage() {
       </div>
 
       {/* Quick Actions */}
-      {hasFeature('ADVANCED_APPROVALS') && (
+      {hasFeature && hasFeature('ADVANCED_APPROVALS') && (
         <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl border border-yellow-200 p-6 shadow-lg">
           <div className="flex items-center mb-4">
             <Zap className="h-6 w-6 text-yellow-600 mr-2" />
