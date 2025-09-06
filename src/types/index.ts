@@ -1,442 +1,343 @@
 // ============================================================================
-// USER TYPES
+// BILLION-DOLLAR TYPE SYSTEM - ENTERPRISE GRADE
 // ============================================================================
 
 export interface User {
-  _id: string;
-  firstName: string;
-  lastName: string;
+  id: string;
+  name: string;
   email: string;
-  profilePicture?: string;
-  phoneNumber?: string;
-  currency: 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD' | 'INR';
-  timezone: string;
-  preferences: UserPreferences;
-  subscription: Subscription;
-  connectedServices: ConnectedServices;
-  isEmailVerified: boolean;
-  isActive: boolean;
+  avatar?: string;
+  accountType: 'consumer' | 'business';
+  plan: 'free' | 'pro' | 'premium' | 'enterprise';
+  joinedAt: string;
   lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  fullName: string; // Virtual field
+  
+  // Consumer specific
+  monthlyIncome?: number;
+  creditScore?: number;
+  financialGoals?: FinancialGoal[];
+  riskProfile?: 'conservative' | 'moderate' | 'aggressive';
+  
+  // Business specific
+  companyName?: string;
+  companySize?: number;
+  industry?: string;
+  role?: 'admin' | 'manager' | 'employee' | 'accountant';
+  department?: string;
+  
+  // Subscription
+  subscriptionId?: string;
+  trialEndsAt?: string;
 }
-
-export interface UserPreferences {
-  notifications: {
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-  };
-  privacy: {
-    shareAnalytics: boolean;
-    shareInsights: boolean;
-  };
-  automation: {
-    emailProcessing: boolean;
-    smsProcessing: boolean;
-    autoCategories: boolean;
-  };
-}
-
-export interface Subscription {
-  plan: 'free' | 'pro' | 'business';
-  status: 'active' | 'inactive' | 'cancelled';
-  startDate: string;
-  endDate?: string;
-}
-
-export interface ConnectedServices {
-  gmail: {
-    connected: boolean;
-    lastSync?: string;
-  };
-  banking: {
-    connectedAccounts: string[];
-    lastSync?: string;
-  };
-}
-
-// ============================================================================
-// TRANSACTION TYPES
-// ============================================================================
 
 export interface Transaction {
-  _id: string;
+  id: string;
   userId: string;
-  amount: number;
   description: string;
-  date: string;
-  category: TransactionCategory;
+  amount: number;
+  category: string;
   subcategory?: string;
-  type: TransactionType;
-  isTaxDeductible: boolean;
-  taxCategory?: TaxCategory;
-  location?: Location;
-  paymentMethod: PaymentMethod;
-  source: TransactionSource;
-  aiProcessing: AIProcessing;
-  attachments: Attachment[];
-  merchant?: Merchant;
-  project?: Project;
-  status: TransactionStatus;
-  isRecurring: boolean;
-  recurringPattern?: RecurringPattern;
+  date: string;
+  isExpense: boolean;
+  merchant: string;
+  currency: string;
+  paymentMethod?: 'credit_card' | 'debit_card' | 'cash' | 'bank_transfer' | 'digital_wallet';
+  location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  receiptUrl?: string;
   notes?: string;
   tags: string[];
+  
+  // Recurring transaction support
+  isRecurring: boolean;
+  recurringInfo?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    nextDate: string;
+    endDate?: string;
+  };
+  
+  // Business specific
+  projectId?: string;
+  departmentId?: string;
+  employeeId?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  approvedBy?: string;
+  approvedAt?: string;
+  
+  // AI enhancement
+  aiCategory?: string;
+  aiConfidence?: number;
+  fraudScore?: number;
+  
+  // System metadata
   createdAt: string;
   updatedAt: string;
-  monthYear: string; // Virtual field
-  absoluteAmount: number; // Virtual field
+  syncedAt?: string;
+  syncSource: 'manual' | 'bank' | 'receipt_ocr' | 'voice' | 'api';
+  version: number;
 }
 
-export type TransactionCategory = 
-  | 'Food & Dining'
-  | 'Transportation'
-  | 'Shopping' 
-  | 'Entertainment'
-  | 'Bills & Utilities'
-  | 'Healthcare'
-  | 'Education'
-  | 'Travel'
-  | 'Business Expenses'
-  | 'Income'
-  | 'Investment'
-  | 'Transfer'
-  | 'Other';
+export interface FinancialGoal {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string;
+  category: 'emergency' | 'savings' | 'vacation' | 'house' | 'car' | 'education' | 'retirement' | 'debt_payoff' | 'custom';
+  priority: 'low' | 'medium' | 'high';
+  
+  // Automation
+  autoContribute?: {
+    enabled: boolean;
+    amount: number;
+    frequency: 'daily' | 'weekly' | 'monthly';
+  };
+  
+  // Progress tracking
+  milestones?: {
+    percentage: number;
+    reached: boolean;
+    reachedAt?: string;
+  }[];
+  
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  isArchived: boolean;
+}
 
-export type TransactionType = 'income' | 'expense' | 'transfer';
+export interface Budget {
+  id: string;
+  userId: string;
+  companyId?: string;
+  name: string;
+  description?: string;
+  category: string;
+  subcategories?: string[];
+  monthlyLimit: number;
+  yearlyLimit?: number;
+  spent: number;
+  remaining: number;
+  percentUsed: number;
+  
+  period: 'monthly' | 'quarterly' | 'yearly' | 'custom';
+  periodStart: string;
+  periodEnd: string;
+  
+  alertThresholds: {
+    warning: number;
+    critical: number;
+    warningTriggered?: boolean;
+    criticalTriggered?: boolean;
+  };
+  
+  rollover: boolean;
+  autoAdjust: boolean;
+  linkedGoalId?: string;
+  
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type TaxCategory = 'business' | 'medical' | 'education' | 'charity' | 'other';
+export interface Investment {
+  id: string;
+  userId: string;
+  portfolioId?: string;
+  symbol: string;
+  name: string;
+  type: 'stock' | 'crypto' | 'etf' | 'mutual_fund' | 'bond' | 'real_estate' | 'commodity';
+  shares: number;
+  averageCost: number;
+  currentPrice: number;
+  totalCost: number;
+  totalValue: number;
+  unrealizedGain: number;
+  unrealizedGainPercent: number;
+  realizedGain?: number;
+  dividendsReceived?: number;
+  purchaseDate: string;
+  purchasePrice: number;
+  brokerage: string;
+  account: string;
+  
+  // AI insights
+  aiRecommendation?: 'buy' | 'sell' | 'hold';
+  aiConfidence?: number;
+  riskScore?: number;
+  
+  lastUpdated: string;
+  createdAt: string;
+  notes?: string;
+  isWatchlist?: boolean;
+}
 
-export type PaymentMethod = 
-  | 'cash'
-  | 'credit_card'
-  | 'debit_card'
-  | 'bank_transfer'
-  | 'mobile_payment'
-  | 'check'
-  | 'other';
+export interface BusinessTeamMember {
+  id: string;
+  companyId: string;
+  userId: string;
+  invitedBy: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'employee' | 'accountant' | 'viewer';
+  permissions: Permission[];
+  department: string;
+  jobTitle?: string;
+  monthlyBudget?: number;
+  spentThisMonth: number;
+  approvalLimit: number;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  invitedAt: string;
+  joinedAt?: string;
+  lastActiveAt?: string;
+  emailNotifications: boolean;
+  slackUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type TransactionSource = 
-  | 'manual'
-  | 'email'
-  | 'sms'
-  | 'voice'
-  | 'bank_sync'
-  | 'api';
-
-export type TransactionStatus = 'pending' | 'confirmed' | 'cancelled';
-
-export interface Location {
-  name?: string;
-  address?: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
+export interface Permission {
+  resource: string;
+  actions: ('create' | 'read' | 'update' | 'delete' | 'approve')[];
+  conditions?: {
+    departmentOnly?: boolean;
+    amountLimit?: number;
+    timeRange?: string;
   };
 }
 
-export interface AIProcessing {
+export interface AIInsight {
+  id: string;
+  userId: string;
+  companyId?: string;
+  type: 'saving_opportunity' | 'budget_alert' | 'goal_progress' | 'fraud_alert' | 
+        'investment_suggestion' | 'spending_pattern' | 'cash_flow_prediction' | 
+        'tax_optimization' | 'subscription_waste' | 'bill_negotiation';
+  category: 'financial_health' | 'spending' | 'saving' | 'investing' | 'security' | 'taxes';
+  title: string;
+  description: string;
+  summary?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  urgency: 'low' | 'medium' | 'high';
+  potentialSavings?: number;
+  potentialEarnings?: number;
+  riskAmount?: number;
   confidence: number;
-  originalCategory?: string;
-  userCorrected: boolean;
-  processingDate: string;
+  modelVersion: string;
+  dataPoints: string[];
+  actionable: boolean;
+  actionText?: string;
+  actionUrl?: string;
+  dismissed: boolean;
+  dismissedAt?: string;
+  variant?: string;
+  createdAt: string;
+  expiresAt?: string;
+  isRead: boolean;
+  readAt?: string;
 }
 
-export interface Attachment {
-  type: 'receipt' | 'invoice' | 'image' | 'document';
-  url: string;
-  filename?: string;
-  size?: number;
-  uploadedAt: string;
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'update';
+  title: string;
+  message: string;
+  richContent?: {
+    html?: string;
+    imageUrl?: string;
+    buttons?: NotificationButton[];
+  };
+  channels: ('in_app' | 'email' | 'sms' | 'push' | 'slack')[];
+  read: boolean;
+  readAt?: string;
+  clicked: boolean;
+  clickedAt?: string;
+  actionTaken?: string;
+  scheduledFor?: string;
+  deliveredAt?: string;
+  priority: 'low' | 'medium' | 'high';
+  category: string;
+  createdAt: string;
+  expiresAt?: string;
 }
 
-export interface Merchant {
-  name?: string;
-  category?: string;
-  website?: string;
+export interface NotificationButton {
+  text: string;
+  url?: string;
+  action?: string;
+  style: 'primary' | 'secondary' | 'danger';
 }
-
-export interface Project {
-  name?: string;
-  code?: string;
-  client?: string;
-}
-
-export interface RecurringPattern {
-  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  nextDate?: string;
-  endDate?: string;
-}
-
-// ============================================================================
-// API RESPONSE TYPES
-// ============================================================================
 
 export interface ApiResponse<T = any> {
   success: boolean;
-  message?: string;
   data?: T;
-  error?: string;
-  details?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+    field?: string;
+  };
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    hasMore?: boolean;
+    processingTime?: number;
+  };
+  timestamp: string;
+  version: string;
 }
 
-export interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalTransactions: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  limit: number;
-}
-
-export interface TransactionsResponse {
-  transactions: Transaction[];
-  pagination: PaginationInfo;
-}
-
-// ============================================================================
-// ANALYTICS TYPES
-// ============================================================================
-
-export interface AnalyticsSummary {
-  totalIncome: number;
-  totalExpenses: number;
-  netIncome: number;
-  transactionCount: number;
-  dateRange: {
-    startDate: string;
-    endDate: string;
+export interface PaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 }
 
-export interface CategoryBreakdown {
-  _id: string;
-  totalAmount: number;
-  count: number;
+export interface FeatureFlags {
+  // Consumer features
+  INVESTMENT_TRACKING: boolean;
+  AI_BUDGET_OPTIMIZER: boolean;
+  VOICE_TRANSACTIONS: boolean;
+  RECEIPT_OCR: boolean;
+  BANK_SYNC: boolean;
+  CREDIT_SCORE_MONITORING: boolean;
+  GOAL_AUTOMATION: boolean;
+  CASH_FLOW_PREDICTION: boolean;
+  
+  // Business features
+  TEAM_MANAGEMENT: boolean;
+  APPROVAL_WORKFLOWS: boolean;
+  ADVANCED_REPORTING: boolean;
+  MULTI_CURRENCY: boolean;
+  QUICKBOOKS_SYNC: boolean;
+  SLACK_INTEGRATION: boolean;
+  CUSTOM_ROLES: boolean;
+  AUDIT_LOGS: boolean;
+  
+  // Premium features
+  FINANCIAL_ADVISOR_CHAT: boolean;
+  CUSTOM_INTEGRATIONS: boolean;
+  WHITE_LABEL: boolean;
+  PRIORITY_SUPPORT: boolean;
+  UNLIMITED_HISTORY: boolean;
+  ADVANCED_ANALYTICS: boolean;
+  
+  // Experimental features
+  CRYPTO_TRACKING: boolean;
+  AI_TAX_OPTIMIZER: boolean;
+  REAL_ESTATE_TRACKING: boolean;
+  INTERNATIONAL_TRANSFERS: boolean;
 }
-
-export interface MonthlyTrend {
-  _id: TransactionType;
-  totalAmount: number;
-  count: number;
-  avgAmount: number;
-}
-
-export interface AnalyticsData {
-  summary: AnalyticsSummary;
-  categoryBreakdown: CategoryBreakdown[];
-  monthlyTrends: MonthlyTrend[];
-}
-
-// ============================================================================
-// FORM TYPES
-// ============================================================================
-
-export interface LoginFormData {
-  email: string;
-  password: string;
-}
-
-export interface RegisterFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface TransactionFormData {
-  amount: number | string;
-  description: string;
-  date: string;
-  category: TransactionCategory;
-  subcategory?: string;
-  type?: TransactionType;
-  isTaxDeductible?: boolean;
-  taxCategory?: TaxCategory;
-  paymentMethod?: PaymentMethod;
-  notes?: string;
-  tags?: string[];
-}
-
-export interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-  currency: User['currency'];
-  timezone: string;
-  preferences: UserPreferences;
-}
-
-// ============================================================================
-// UI STATE TYPES
-// ============================================================================
-
-export interface LoadingState {
-  isLoading: boolean;
-  loadingText?: string;
-}
-
-export interface ErrorState {
-  hasError: boolean;
-  error?: string;
-  errorCode?: string;
-}
-
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message?: string;
-  duration?: number;
-}
-
-// ============================================================================
-// FILTER & SEARCH TYPES
-// ============================================================================
-
-export interface TransactionFilters {
-  startDate?: string;
-  endDate?: string;
-  category?: TransactionCategory;
-  type?: TransactionType;
-  minAmount?: number;
-  maxAmount?: number;
-  search?: string;
-  sortBy?: 'date' | 'amount' | 'description' | 'category';
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-export interface DateRange {
-  startDate: Date;
-  endDate: Date;
-  label: string;
-}
-
-// ============================================================================
-// CHART DATA TYPES
-// ============================================================================
-
-export interface ChartDataPoint {
-  label: string;
-  value: number;
-  color?: string;
-}
-
-export interface TimeSeriesDataPoint {
-  date: string;
-  value: number;
-  category?: string;
-}
-
-export interface ChartConfig {
-  type: 'line' | 'bar' | 'pie' | 'doughnut' | 'area';
-  data: ChartDataPoint[] | TimeSeriesDataPoint[];
-  options?: any;
-}
-
-// ============================================================================
-// UTILITY TYPES
-// ============================================================================
-
-export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-
-export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
-
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
-// ============================================================================
-// THEME TYPES
-// ============================================================================
-
-export interface Theme {
-  colors: {
-    primary: string;
-    secondary: string;
-    success: string;
-    warning: string;
-    danger: string;
-    info: string;
-    light: string;
-    dark: string;
-  };
-  spacing: {
-    xs: string;
-    sm: string;
-    md: string;
-    lg: string;
-    xl: string;
-  };
-  borderRadius: {
-    sm: string;
-    md: string;
-    lg: string;
-    xl: string;
-  };
-}
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-export const TRANSACTION_CATEGORIES: TransactionCategory[] = [
-  'Food & Dining',
-  'Transportation',
-  'Shopping',
-  'Entertainment', 
-  'Bills & Utilities',
-  'Healthcare',
-  'Education',
-  'Travel',
-  'Business Expenses',
-  'Income',
-  'Investment',
-  'Transfer',
-  'Other'
-];
-
-export const PAYMENT_METHODS: PaymentMethod[] = [
-  'cash',
-  'credit_card',
-  'debit_card',
-  'bank_transfer',
-  'mobile_payment',
-  'check',
-  'other'
-];
-
-export const CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-] as const;
-
-export const SUBSCRIPTION_PLANS = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    features: ['Manual transaction entry', 'Basic categorization', 'Simple reports']
-  },
-  {
-    id: 'pro', 
-    name: 'Pro',
-    price: 19,
-    features: ['AI categorization', 'Email processing', 'Advanced analytics', 'Tax optimization']
-  },
-  {
-    id: 'business',
-    name: 'Business', 
-    price: 99,
-    features: ['Everything in Pro', 'Multi-user access', 'API integration', 'White-label options']
-  }
-] as const;

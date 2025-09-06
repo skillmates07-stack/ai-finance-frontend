@@ -4,71 +4,70 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import './globals.css';
 
-// Font optimization with proper fallbacks
 const inter = Inter({ 
   subsets: ['latin'],
-  variable: '--font-inter',
   display: 'swap',
-  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  variable: '--font-inter',
 });
 
-const poppins = Poppins({ 
+const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
-  fallback: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+  variable: '--font-poppins',
 });
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | AI Finance Assistant',
-    default: 'AI Finance Assistant - Your AI-Powered Personal CFO',
+    default: 'AI Finance - Smart Financial Management for Everyone',
+    template: '%s | AI Finance',
   },
-  description: 'Transform your financial life with AI-powered expense tracking, smart categorization, and intelligent insights. Join 50,000+ users saving money with our advanced financial assistant.',
+  description: 'Transform your finances with AI-powered insights. Manage personal budgets, business expenses, and investments with enterprise-grade security and intelligent automation.',
   keywords: [
     'personal finance',
-    'ai finance',
+    'business finance', 
+    'AI financial advisor',
     'expense tracking',
-    'budgeting app',
-    'financial assistant',
-    'money management',
-    'smart budgeting',
-    'ai categorization',
+    'budget management',
+    'investment tracking',
     'financial planning',
-    'wealth building'
+    'business expense management',
+    'financial analytics'
   ],
-  authors: [{ name: 'AI Finance Team', url: 'https://aifinance.app' }],
-  creator: 'AI Finance Assistant',
-  publisher: 'AI Finance Inc.',
+  authors: [{ name: 'AI Finance Team' }],
+  creator: 'AI Finance',
+  publisher: 'AI Finance',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://aifinance.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ai-finance.app'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: '/',
-    siteName: 'AI Finance Assistant',
-    title: 'AI Finance Assistant - Your AI-Powered Personal CFO',
-    description: 'Transform your financial life with AI-powered expense tracking and intelligent insights. Join 50,000+ users building wealth.',
+    title: 'AI Finance - Smart Financial Management',
+    description: 'Transform your finances with AI-powered insights and professional-grade tools.',
+    url: 'https://ai-finance.app',
+    siteName: 'AI Finance',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'AI Finance Assistant - Smart Personal Finance Management',
+        alt: 'AI Finance - Smart Financial Management Platform',
       },
     ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI Finance Assistant - Your AI-Powered Personal CFO',
-    description: 'Transform your financial life with AI-powered expense tracking and intelligent insights.',
-    images: ['/og-image.jpg'],
-    creator: '@AIFinanceApp',
+    title: 'AI Finance - Smart Financial Management',
+    description: 'Transform your finances with AI-powered insights and professional-grade tools.',
+    images: ['/twitter-image.jpg'],
+    creator: '@aifinanceapp',
   },
   robots: {
     index: true,
@@ -81,35 +80,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
-  },
   category: 'finance',
-  classification: 'Personal Finance Management',
-  generator: 'Next.js',
-  applicationName: 'AI Finance Assistant',
-  referrer: 'origin-when-cross-origin',
-  colorScheme: 'light',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#3b82f6' },
-    { media: '(prefers-color-scheme: dark)', color: '#1e40af' },
-  ],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180' },
-    ],
-  },
-  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -118,70 +89,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <head>
-        {/* Critical resource hints */}
+        <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="//analytics.google.com" />
         
-        {/* Favicon and PWA icons */}
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
-        
-        {/* PWA and mobile optimization */}
-        <meta name="theme-color" content="#3b82f6" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="AI Finance" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        
-        {/* Security headers */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="Referrer-Policy" content="origin-when-cross-origin" />
+        <meta httpEquiv="X-Frame-Options" content="DENY" />
+        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#3b82f6" />
         
-        {/* Performance optimization */}
-        <meta httpEquiv="x-dns-prefetch-control" content="on" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/site.webmanifest" />
       </head>
-      
-      <body className="font-inter antialiased bg-gray-50 selection:bg-blue-100 selection:text-blue-900 min-h-screen">
-        {/* Skip to main content for accessibility */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50 font-medium shadow-lg"
-        >
-          Skip to main content
-        </a>
-        
-        {/* Auth Provider wraps entire app */}
+      <body className={inter.className}>
         <AuthProvider>
-          {/* Main app content */}
-          <div id="main-content" className="relative">
-            {children}
-          </div>
-          
-          {/* Global toast notifications */}
-          <Toaster
+          {children}
+          <Toaster 
             position="top-right"
-            reverseOrder={false}
-            gutter={8}
-            containerClassName=""
-            containerStyle={{}}
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#ffffff',
-                color: '#1f2937',
-                border: '1px solid #e5e7eb',
+                background: '#1f2937',
+                color: '#f9fafb',
                 borderRadius: '12px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                fontFamily: 'var(--font-inter)',
+                padding: '16px',
                 fontSize: '14px',
                 fontWeight: '500',
                 maxWidth: '400px',
-                padding: '12px 16px',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
               },
               success: {
                 iconTheme: {
@@ -189,8 +130,7 @@ export default function RootLayout({
                   secondary: '#ffffff',
                 },
                 style: {
-                  border: '1px solid #d1fae5',
-                  background: '#f0fdf4',
+                  background: '#059669',
                 },
               },
               error: {
@@ -199,8 +139,7 @@ export default function RootLayout({
                   secondary: '#ffffff',
                 },
                 style: {
-                  border: '1px solid #fecaca',
-                  background: '#fef2f2',
+                  background: '#dc2626',
                 },
               },
               loading: {
@@ -212,39 +151,6 @@ export default function RootLayout({
             }}
           />
         </AuthProvider>
-
-        {/* Development indicator */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="fixed bottom-4 right-4 z-50 opacity-60 hover:opacity-100 transition-opacity duration-200">
-            <div className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-medium shadow-lg">
-              DEV MODE
-            </div>
-          </div>
-        )}
-
-        {/* Performance monitoring script placeholder */}
-        {process.env.NODE_ENV === 'production' && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                // Performance monitoring initialization
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                      console.log('ServiceWorker registration failed: ', err);
-                    });
-                  });
-                }
-                
-                // Basic analytics placeholder
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'GA_TRACKING_ID');
-              `,
-            }}
-          />
-        )}
       </body>
     </html>
   );
