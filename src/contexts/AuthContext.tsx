@@ -10,11 +10,11 @@ import { toast } from 'react-hot-toast';
  * Enterprise Features:
  * - Role-based access control (RBAC)
  * - Permission-based authorization
- * - Feature flag management
+ * - Feature flag management with APPROVAL_WORKFLOWS (CRITICAL FIX)
  * - JWT token handling
  * - Session management
  * - Multi-tier user plans
- * - Company branding support (CRITICAL FIX)
+ * - Company branding support
  * - Audit logging integration
  * - 2FA support
  * - Enterprise SSO ready
@@ -28,7 +28,7 @@ export type UserRole = 'admin' | 'manager' | 'user' | 'viewer' | 'enterprise';
 export type UserPlan = 'free' | 'pro' | 'business' | 'enterprise';
 
 /**
- * Enterprise Feature Flags Interface
+ * Enterprise Feature Flags Interface - FIXED WITH APPROVAL_WORKFLOWS
  * Complete feature flag system for billion-dollar platform
  */
 export interface FeatureFlags {
@@ -66,10 +66,13 @@ export interface FeatureFlags {
   RATE_LIMITING: boolean;
   AUDIT_LOGS: boolean;
   WHITE_LABEL_API: boolean;
+  
+  // ← CRITICAL FIX: Added missing feature flag
+  APPROVAL_WORKFLOWS: boolean;
 }
 
 /**
- * Enterprise User Interface - FIXED WITH COMPANY NAME
+ * Enterprise User Interface - COMPLETE WITH COMPANY NAME
  * Complete user data structure for Fortune 500-level systems
  */
 export interface User {
@@ -80,7 +83,7 @@ export interface User {
   plan: UserPlan;
   avatar?: string;
   department?: string;
-  companyName?: string; // ← CRITICAL FIX: Added missing companyName property
+  companyName?: string;
   permissions: string[];
   featureFlags: FeatureFlags;
   lastLogin?: Date;
@@ -103,7 +106,6 @@ export interface User {
     expiresAt?: Date;
     features: string[];
   };
-  // Enterprise company details
   company?: {
     name: string;
     industry: string;
@@ -165,7 +167,7 @@ interface AuthContextType {
   getSessionInfo: () => { expiresAt: Date; isActive: boolean };
 }
 
-// ===== DEFAULT FEATURE FLAGS BY PLAN =====
+// ===== DEFAULT FEATURE FLAGS BY PLAN - FIXED WITH APPROVAL_WORKFLOWS =====
 
 const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
   const baseFlags: FeatureFlags = {
@@ -194,6 +196,7 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
     RATE_LIMITING: false,
     AUDIT_LOGS: false,
     WHITE_LABEL_API: false,
+    APPROVAL_WORKFLOWS: false, // ← CRITICAL FIX: Added missing flag
   };
 
   switch (plan) {
@@ -210,6 +213,7 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         REAL_TIME_SETTLEMENTS: true,
         RISK_MANAGEMENT: true,
         AUDIT_LOGS: true,
+        APPROVAL_WORKFLOWS: true, // ← CRITICAL FIX: Pro users get approval workflows
       };
     
     case 'business':
@@ -236,10 +240,11 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         SANDBOX_ENVIRONMENT: true,
         RATE_LIMITING: true,
         AUDIT_LOGS: true,
+        APPROVAL_WORKFLOWS: true, // ← CRITICAL FIX: Business users get approval workflows
       };
     
     case 'enterprise':
-      // Enterprise gets ALL features
+      // Enterprise gets ALL features including APPROVAL_WORKFLOWS
       return Object.keys(baseFlags).reduce((acc, key) => {
         acc[key as keyof FeatureFlags] = true;
         return acc;
@@ -381,7 +386,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       plan,
       avatar: 'https://ui-avatars.com/api/?name=Executive+User&background=6366f1&color=ffffff&bold=true',
       department: 'Executive',
-      companyName: 'TechCorp Industries', // ← CRITICAL FIX: Added companyName
+      companyName: 'TechCorp Industries',
       permissions: getPermissionsByRole(role),
       featureFlags: getDefaultFeatureFlags(plan),
       lastLogin: new Date(),
@@ -553,7 +558,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ===== FEATURE FLAG METHODS - BILLION-DOLLAR FEATURES =====
 
   /**
-   * Check if user has specific feature flag enabled - TYPE-SAFE
+   * Check if user has specific feature flag enabled - TYPE-SAFE WITH APPROVAL_WORKFLOWS
    */
   const hasFeature = useCallback((feature: keyof FeatureFlags): boolean => {
     if (!user) return false;
