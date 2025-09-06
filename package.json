@@ -11,7 +11,9 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "analyze": "cross-env ANALYZE=true next build",
-    "clean": "rm -rf .next out dist node_modules",
+    "clean": "rm -rf .next out dist node_modules package-lock.json yarn.lock",
+    "fresh-install": "npm run clean && npm install --legacy-peer-deps",
+    "safe-build": "npm run lint && npm run type-check && npm run build",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -61,8 +63,8 @@
     "typescript": "^5.5.2",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.4",
-    "@typescript-eslint/eslint-plugin": "^7.13.1",
-    "@typescript-eslint/parser": "^7.13.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "eslint-plugin-react": "^7.34.3",
     "eslint-plugin-react-hooks": "^4.6.2",
     "prettier": "^3.3.2",
