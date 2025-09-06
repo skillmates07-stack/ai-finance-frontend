@@ -34,15 +34,18 @@ import {
   CheckCircle,
   Clock,
   Target,
-  Award
+  Award,
+  ChevronRight,
+  Eye,
+  Plus
 } from 'lucide-react';
 
 /**
  * BILLION-DOLLAR BUSINESS LAYOUT
  * 
  * Enterprise Features:
+ * - Account type routing with business/consumer separation (CRITICAL FIX)
  * - Role-based navigation with dynamic menu items
- * - Account type routing with business/consumer separation
  * - Responsive design with mobile-first approach
  * - Real-time notifications and alerts system
  * - Professional Fortune 500-level UI design
@@ -61,7 +64,7 @@ interface NavigationItem {
   name: string;
   href: string;
   icon: any;
-  requiresFeature?: string;
+  requiresFeature?: keyof import('@/contexts/AuthContext').FeatureFlags;
   requiresRole?: string[];
   requiresPlan?: string[];
   badge?: string;
@@ -86,7 +89,7 @@ export default function BusinessLayout({
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState<any[]>([]);
 
-  // ===== AUTHENTICATION AND ROUTING LOGIC =====
+  // ===== AUTHENTICATION AND ROUTING LOGIC - FIXED =====
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
@@ -97,6 +100,7 @@ export default function BusinessLayout({
 
       if (!isAuthenticated) {
         router.push('/login?redirect=business&type=business');
+        toast.info('Please log in to access the business dashboard.');
       } else if (user?.accountType === 'consumer') { // ← FIXED: Now properly typed
         router.push('/dashboard');
         toast.info('Redirecting to consumer dashboard...');
@@ -201,7 +205,7 @@ export default function BusinessLayout({
         {
           name: 'Invitations',
           href: '/business/team/invitations',
-          icon: User,
+          icon: Plus,
         },
       ],
     },
@@ -210,6 +214,13 @@ export default function BusinessLayout({
       href: '/business/activity',
       icon: Activity,
       requiresFeature: 'AUDIT_LOGS',
+    },
+    {
+      name: 'Admin',
+      href: '/business/admin',
+      icon: Shield,
+      requiresRole: ['admin', 'enterprise'],
+      badge: 'Admin',
     },
     {
       name: 'Settings',
@@ -244,7 +255,7 @@ export default function BusinessLayout({
 
   // Filter navigation items based on permissions
   const filteredNavigation = navigationItems.filter(item => {
-    if (item.requiresFeature && !hasFeature(item.requiresFeature as any)) return false;
+    if (item.requiresFeature && !hasFeature(item.requiresFeature)) return false;
     if (item.requiresRole && !hasRole(item.requiresRole as any)) return false;
     if (item.requiresPlan && !item.requiresPlan.includes(user?.plan || '')) return false;
     return true;
@@ -341,26 +352,32 @@ export default function BusinessLayout({
                       <ChevronDown className="h-4 w-4 text-gray-400" />
                     </div>
                     <div className="ml-6 space-y-1">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            'flex items-center px-3 py-2 text-sm rounded-lg transition-colors',
-                            isCurrentPath(child.href)
-                              ? 'bg-blue-100 text-blue-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          )}
-                        >
-                          <child.icon className="h-4 w-4 mr-3" />
-                          <span>{child.name}</span>
-                          {child.badge && (
-                            <span className="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {child.badge}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
+                      {item.children.map((child) => {
+                        // Check child permissions
+                        if (child.requiresFeature && !hasFeature(child.requiresFeature)) return null;
+                        if (child.requiresRole && !hasRole(child.requiresRole as any)) return null;
+                        
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={cn(
+                              'flex items-center px-3 py-2 text-sm rounded-lg transition-colors',
+                              isCurrentPath(child.href)
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            )}
+                          >
+                            <child.icon className="h-4 w-4 mr-3" />
+                            <span>{child.name}</span>
+                            {child.badge && (
+                              <span className="ml-auto inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {child.badge}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
