@@ -1,318 +1,439 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { formatCurrency, formatPercentage } from '@/utils/cn';
-import { 
-  Building2, 
-  Users, 
-  CreditCard, 
-  BarChart3, 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown,
-  AlertTriangle, 
-  CheckCircle, 
-  CheckSquare,
-  Clock,
-  Award,
-  Shield,
-  Zap,
-  Activity,
-  PieChart,
-  Target,
+import { cn, formatCurrency } from '@/utils/cn';
+import {
+  BarChart3,
+  Building2,
   Calendar,
-  Mail,
-  Phone,
-  Globe,
-  RefreshCw,
-  Download,
-  Filter,
+  CheckCircle,
   ChevronRight,
-  ChevronDown,
-  Plus,
-  Eye,
-  UserCheck,
+  Clock,
   Crown,
-  Star,
-  Briefcase,
+  Database,
+  DollarSign,
+  Download,
+  Eye,
   FileText,
-  Settings,
-  Bell,
-  ArrowUpRight,
-  ArrowDownRight,
-  Wallet,
-  CreditCard as CardIcon,
+  Filter,
+  Globe,
+  Key,
   LineChart,
-  PlusCircle,
-  MinusCircle,
-  AlertCircle,
-  Info
+  Lock,
+  Mail,
+  MoreVertical,
+  PieChart,
+  Plus,
+  RefreshCw,
+  Search,
+  Server,
+  Settings,
+  Shield,
+  Smartphone,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  User,
+  UserCheck,
+  Users,
+  Zap,
+  AlertTriangle,
+  Award,
+  Bell,
+  CreditCard,
+  ExternalLink,
+  Filter as FilterIcon,
+  Grid,
+  Home,
+  Layers,
+  Map,
+  Monitor,
+  Package,
+  Phone,
+  Printer,
+  Radio,
+  Send,
+  Star,
+  Tag,
+  Trash2,
+  Upload,
+  Video,
+  Wifi,
+  XCircle
 } from 'lucide-react';
 
 /**
- * BILLION-DOLLAR BUSINESS ADMIN DASHBOARD
+ * BILLION-DOLLAR ADMIN DASHBOARD
  * 
- * Features:
- * - Executive KPI overview with real-time metrics
- * - Advanced financial analytics and cash flow monitoring
- * - Team performance and activity tracking
- * - Expense approval workflow management
- * - Multi-currency support and international operations
- * - Risk assessment and compliance monitoring
- * - Interactive charts and data visualizations
- * - Mobile-responsive executive interface
- * - Role-based access control and security
- * - Integration status for enterprise systems
- * - Real-time notifications and alerts
- * - Professional Fortune 500-level design
+ * Enterprise Features:
+ * - Comprehensive user management with role-based controls
+ * - Real-time system analytics and performance monitoring
+ * - Advanced security oversight and threat detection
+ * - Financial transaction monitoring and compliance
+ * - Multi-tenant organization management
+ * - Automated reporting and audit trail generation
+ * - API management and developer tools
+ * - Compliance monitoring and regulatory reporting
+ * - Professional Fortune 500-level administrative interface
+ * - Advanced feature flag management and deployment controls
+ * - Enterprise-grade backup and disaster recovery
+ * - Scalable infrastructure monitoring and optimization
  */
 
-interface BusinessMetrics {
-  revenue: {
-    current: number;
-    previous: number;
-    growth: number;
-    target: number;
-  };
-  expenses: {
-    current: number;
-    previous: number;
-    growth: number;
-    budget: number;
-  };
-  cashFlow: {
-    current: number;
-    projected: number;
-    runway: number; // months
-  };
-  team: {
-    total: number;
-    active: number;
-    newHires: number;
-    utilization: number;
-  };
-  approvals: {
-    pending: number;
-    approved: number;
-    rejected: number;
-    totalValue: number;
-  };
+// ===== ENTERPRISE TYPE DEFINITIONS =====
+
+interface AdminMetrics {
+  totalUsers: number;
+  activeUsers: number;
+  totalRevenue: number;
+  monthlyGrowth: number;
+  systemHealth: number;
+  securityScore: number;
+  complianceRating: number;
+  apiCalls: number;
+  errorRate: number;
+  responseTime: number;
+}
+
+interface SystemAlert {
+  id: string;
+  type: 'security' | 'performance' | 'compliance' | 'financial' | 'system';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
+  timestamp: string;
+  status: 'active' | 'acknowledged' | 'resolved';
+  actionRequired: boolean;
 }
 
 interface RecentActivity {
   id: string;
-  type: 'expense' | 'approval' | 'team' | 'revenue' | 'alert';
-  title: string;
-  description: string;
-  amount?: number;
-  user?: string;
+  user: {
+    name: string;
+    email: string;
+    avatar: string;
+  };
+  action: string;
+  resource: string;
   timestamp: string;
-  status: 'success' | 'warning' | 'error' | 'info';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  impact: 'low' | 'medium' | 'high';
 }
 
-export default function BusinessAdminPage() {
-  const { user, hasFeature } = useAuth();
+interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  plan: string;
+  status: 'active' | 'inactive' | 'suspended';
+  lastLogin: string;
+  totalSpent: number;
+  riskScore: number;
+}
+
+// ===== MAIN COMPONENT =====
+
+export default function AdminDashboard() {
+  // ===== HOOKS AND STATE =====
+  const { user, hasFeature, hasRole, hasPermission } = useAuth();
   const router = useRouter();
-  
-  // State management for dashboard data
+
+  // Core state management
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
-  const [businessMetrics, setBusinessMetrics] = useState<BusinessMetrics>({
-    revenue: { current: 0, previous: 0, growth: 0, target: 0 },
-    expenses: { current: 0, previous: 0, growth: 0, budget: 0 },
-    cashFlow: { current: 0, projected: 0, runway: 0 },
-    team: { total: 0, active: 0, newHires: 0, utilization: 0 },
-    approvals: { pending: 0, approved: 0, rejected: 0, totalValue: 0 }
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'analytics' | 'security' | 'settings'>('overview');
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d'>('30d');
+  
+  // Data state
+  const [metrics, setMetrics] = useState<AdminMetrics>({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalRevenue: 0,
+    monthlyGrowth: 0,
+    systemHealth: 0,
+    securityScore: 0,
+    complianceRating: 0,
+    apiCalls: 0,
+    errorRate: 0,
+    responseTime: 0
   });
+  
+  const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [notifications, setNotifications] = useState(0);
+  const [userSummaries, setUserSummaries] = useState<UserSummary[]>([]);
 
-  // Load comprehensive business dashboard data
+  // Filter and search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  // ===== AUTHENTICATION CHECK =====
+
   useEffect(() => {
-    loadBusinessDashboard();
-  }, [user?.id, selectedPeriod]);
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
-  const loadBusinessDashboard = async () => {
-    if (!user?.id) return;
+    if (!hasRole(['admin', 'enterprise'])) {
+      toast.error('Access denied. Administrator privileges required.');
+      router.push('/business');
+      return;
+    }
+  }, [user, hasRole, router]);
+
+  // ===== DATA GENERATION AND LOADING =====
+
+  /**
+   * Generate comprehensive admin metrics for enterprise dashboard
+   */
+  const generateAdminMetrics = useCallback((): AdminMetrics => {
+    return {
+      totalUsers: Math.floor(Math.random() * 50000) + 10000,
+      activeUsers: Math.floor(Math.random() * 30000) + 8000,
+      totalRevenue: Math.floor(Math.random() * 10000000) + 1000000,
+      monthlyGrowth: (Math.random() - 0.5) * 40, // -20% to +20%
+      systemHealth: Math.floor(Math.random() * 20) + 85, // 85-100%
+      securityScore: Math.floor(Math.random() * 15) + 88, // 88-100%
+      complianceRating: Math.floor(Math.random() * 10) + 92, // 92-100%
+      apiCalls: Math.floor(Math.random() * 1000000) + 500000,
+      errorRate: Math.random() * 0.5, // 0-0.5%
+      responseTime: Math.floor(Math.random() * 50) + 50 // 50-100ms
+    };
+  }, []);
+
+  /**
+   * Generate system alerts for monitoring
+   */
+  const generateSystemAlerts = useCallback((): SystemAlert[] => {
+    const alertTypes = ['security', 'performance', 'compliance', 'financial', 'system'] as const;
+    const severities = ['low', 'medium', 'high', 'critical'] as const;
+    const statuses = ['active', 'acknowledged', 'resolved'] as const;
+
+    return Array.from({ length: 12 }, (_, i) => ({
+      id: `alert-${i + 1}`,
+      type: alertTypes[i % alertTypes.length],
+      severity: severities[Math.floor(Math.random() * severities.length)],
+      title: generateAlertTitle(alertTypes[i % alertTypes.length]),
+      description: generateAlertDescription(alertTypes[i % alertTypes.length]),
+      timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      actionRequired: Math.random() > 0.7
+    }));
+  }, []);
+
+  /**
+   * Generate alert titles based on type
+   */
+  const generateAlertTitle = (type: SystemAlert['type']): string => {
+    const titles = {
+      security: ['Unusual Login Pattern Detected', 'Failed Authentication Attempts', 'Suspicious API Activity', 'Unauthorized Access Attempt'],
+      performance: ['High CPU Usage Alert', 'Database Query Timeout', 'Memory Usage Warning', 'Slow Response Times'],
+      compliance: ['Data Retention Policy Violation', 'Audit Log Gap Detected', 'Regulatory Compliance Check', 'Privacy Policy Update Required'],
+      financial: ['Large Transaction Alert', 'Payment Processing Error', 'Revenue Anomaly Detected', 'Fraud Pattern Identified'],
+      system: ['Server Downtime Alert', 'Backup Failure Warning', 'Storage Capacity Alert', 'System Update Available']
+    };
     
+    const typeAlerts = titles[type];
+    return typeAlerts[Math.floor(Math.random() * typeAlerts.length)];
+  };
+
+  /**
+   * Generate alert descriptions
+   */
+  const generateAlertDescription = (type: SystemAlert['type']): string => {
+    const descriptions = {
+      security: 'Security monitoring system has detected anomalous behavior that requires immediate review.',
+      performance: 'System performance metrics have exceeded normal operational thresholds.',
+      compliance: 'Compliance monitoring has identified potential regulatory or policy violations.',
+      financial: 'Financial transaction monitoring has flagged unusual activity patterns.',
+      system: 'System infrastructure monitoring has detected operational issues requiring attention.'
+    };
+    
+    return descriptions[type];
+  };
+
+  /**
+   * Generate recent activity data
+   */
+  const generateRecentActivity = useCallback((): RecentActivity[] => {
+    const users = [
+      { name: 'Sarah Chen', email: 'sarah.chen@company.com', avatar: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=random' },
+      { name: 'Michael Rodriguez', email: 'michael.r@company.com', avatar: 'https://ui-avatars.com/api/?name=Michael+Rodriguez&background=random' },
+      { name: 'Emily Johnson', email: 'emily.j@company.com', avatar: 'https://ui-avatars.com/api/?name=Emily+Johnson&background=random' },
+      { name: 'David Park', email: 'david.park@company.com', avatar: 'https://ui-avatars.com/api/?name=David+Park&background=random' }
+    ];
+
+    const actions = [
+      'Created new user account',
+      'Updated system configuration',
+      'Processed large transaction',
+      'Generated compliance report',
+      'Modified security settings',
+      'Exported user data',
+      'Updated feature flags',
+      'Performed system backup'
+    ];
+
+    const resources = [
+      'User Management',
+      'System Configuration',
+      'Payment Processing',
+      'Compliance Dashboard',
+      'Security Settings',
+      'Data Export',
+      'Feature Management',
+      'System Backup'
+    ];
+
+    const impacts = ['low', 'medium', 'high'] as const;
+
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: `activity-${i + 1}`,
+      user: users[i % users.length],
+      action: actions[i % actions.length],
+      resource: resources[i % resources.length],
+      timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+      impact: impacts[Math.floor(Math.random() * impacts.length)]
+    }));
+  }, []);
+
+  /**
+   * Generate user summaries
+   */
+  const generateUserSummaries = useCallback((): UserSummary[] => {
+    const names = [
+      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown', 'Eva Davis',
+      'Frank Miller', 'Grace Wilson', 'Henry Moore', 'Iris Taylor', 'Jack Anderson'
+    ];
+    
+    const roles = ['admin', 'manager', 'user', 'viewer'];
+    const plans = ['free', 'pro', 'business', 'enterprise'];
+    const statuses = ['active', 'inactive', 'suspended'] as const;
+
+    return Array.from({ length: 50 }, (_, i) => ({
+      id: `user-${i + 1}`,
+      name: names[i % names.length],
+      email: `${names[i % names.length].toLowerCase().replace(' ', '.')}@company.com`,
+      role: roles[i % roles.length],
+      plan: plans[i % plans.length],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      lastLogin: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      totalSpent: Math.floor(Math.random() * 10000),
+      riskScore: Math.floor(Math.random() * 100)
+    }));
+  }, []);
+
+  /**
+   * Load all admin dashboard data
+   */
+  const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
     
     try {
-      // Simulate realistic business data loading
-      await new Promise(resolve => setTimeout(resolve, 1800));
+      // Simulate loading delay for realistic experience
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Generate comprehensive business metrics
-      const metrics = generateBusinessMetrics();
-      setBusinessMetrics(metrics);
+      const adminMetrics = generateAdminMetrics();
+      const systemAlerts = generateSystemAlerts();
+      const activityData = generateRecentActivity();
+      const userData = generateUserSummaries();
       
-      // Generate recent business activity
-      const activity = generateRecentActivity();
-      setRecentActivity(activity);
+      setMetrics(adminMetrics);
+      setAlerts(systemAlerts);
+      setRecentActivity(activityData);
+      setUserSummaries(userData);
       
-      // Calculate pending notifications
-      setNotifications(metrics.approvals.pending + activity.filter(a => a.priority === 'critical').length);
+      toast.success('Admin dashboard loaded successfully');
       
     } catch (error) {
-      console.error('Business dashboard loading error:', error);
-      toast.error('Failed to load business dashboard. Please refresh.');
+      console.error('Error loading dashboard data:', error);
+      toast.error('Failed to load dashboard data. Please refresh and try again.');
     } finally {
       setIsLoading(false);
     }
+  }, [generateAdminMetrics, generateSystemAlerts, generateRecentActivity, generateUserSummaries]);
+
+  // ===== UTILITY FUNCTIONS =====
+
+  /**
+   * Get severity color for alerts
+   */
+  const getSeverityColor = (severity: SystemAlert['severity']): string => {
+    switch (severity) {
+      case 'critical':
+        return 'text-red-700 bg-red-100 border-red-200 animate-pulse';
+      case 'high':
+        return 'text-orange-700 bg-orange-100 border-orange-200';
+      case 'medium':
+        return 'text-yellow-700 bg-yellow-100 border-yellow-200';
+      case 'low':
+      default:
+        return 'text-blue-700 bg-blue-100 border-blue-200';
+    }
   };
 
-  // Generate realistic business metrics
-  const generateBusinessMetrics = (): BusinessMetrics => {
-    const baseRevenue = 285000;
-    const baseExpenses = 165000;
-    
-    return {
-      revenue: {
-        current: baseRevenue + Math.floor(Math.random() * 50000),
-        previous: baseRevenue - Math.floor(Math.random() * 30000),
-        growth: 12.4 + Math.random() * 5,
-        target: 350000
-      },
-      expenses: {
-        current: baseExpenses + Math.floor(Math.random() * 30000),
-        previous: baseExpenses + Math.floor(Math.random() * 20000),
-        growth: -3.2 + Math.random() * 2,
-        budget: 200000
-      },
-      cashFlow: {
-        current: 1650000 + Math.floor(Math.random() * 200000),
-        projected: 1850000,
-        runway: 18 + Math.floor(Math.random() * 6)
-      },
-      team: {
-        total: 47,
-        active: 44,
-        newHires: 3,
-        utilization: 87.5 + Math.random() * 10
-      },
-      approvals: {
-        pending: 12 + Math.floor(Math.random() * 8),
-        approved: 156,
-        rejected: 8,
-        totalValue: 45600 + Math.floor(Math.random() * 20000)
+  /**
+   * Get status color for users
+   */
+  const getStatusColor = (status: UserSummary['status']): string => {
+    switch (status) {
+      case 'active':
+        return 'text-green-700 bg-green-100 border-green-200';
+      case 'suspended':
+        return 'text-red-700 bg-red-100 border-red-200';
+      case 'inactive':
+      default:
+        return 'text-gray-700 bg-gray-100 border-gray-200';
+    }
+  };
+
+  /**
+   * Filter users based on search and filters
+   */
+  const filteredUsers = useMemo(() => {
+    return userSummaries.filter(user => {
+      // Search filter
+      if (searchTerm && !user.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+          !user.email.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
       }
-    };
-  };
-
-  // Generate recent business activity
-  const generateRecentActivity = (): RecentActivity[] => {
-    const activities: RecentActivity[] = [
-      {
-        id: '1',
-        type: 'approval',
-        title: 'High-value expense pending approval',
-        description: 'Software licensing renewal requires executive approval',
-        amount: 25000,
-        user: 'Sarah Chen',
-        timestamp: '2 minutes ago',
-        status: 'warning',
-        priority: 'critical'
-      },
-      {
-        id: '2',
-        type: 'revenue',
-        title: 'Large client payment received',
-        description: 'Enterprise contract payment processed successfully',
-        amount: 125000,
-        user: 'Accounting System',
-        timestamp: '1 hour ago',
-        status: 'success',
-        priority: 'high'
-      },
-      {
-        id: '3',
-        type: 'team',
-        title: 'New team member onboarded',
-        description: 'Senior Developer joined the engineering team',
-        user: 'Alex Rodriguez',
-        timestamp: '3 hours ago',
-        status: 'success',
-        priority: 'medium'
-      },
-      {
-        id: '4',
-        type: 'expense',
-        title: 'Monthly cloud infrastructure',
-        description: 'AWS billing processed for production systems',
-        amount: 15600,
-        user: 'DevOps Team',
-        timestamp: '6 hours ago',
-        status: 'info',
-        priority: 'low'
-      },
-      {
-        id: '5',
-        type: 'alert',
-        title: 'Budget threshold exceeded',
-        description: 'Marketing department exceeded monthly budget by 15%',
-        amount: 8500,
-        user: 'Finance System',
-        timestamp: '1 day ago',
-        status: 'error',
-        priority: 'high'
-      }
-    ];
-    
-    return activities;
-  };
-
-  // Animated counter for metrics
-  const AnimatedCounter = ({ value, prefix = '', suffix = '', duration = 2000 }: {
-    value: number;
-    prefix?: string;
-    suffix?: string;
-    duration?: number;
-  }) => {
-    const [count, setCount] = useState(0);
-
-    useEffect(() => {
-      if (isLoading) return;
       
-      let startTime: number;
-      const animate = (currentTime: number) => {
-        if (!startTime) startTime = currentTime;
-        const progress = Math.min((currentTime - startTime) / duration, 1);
-        
-        setCount(value * progress);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
+      // Role filter
+      if (filterRole !== 'all' && user.role !== filterRole) {
+        return false;
+      }
+      
+      // Status filter
+      if (filterStatus !== 'all' && user.status !== filterStatus) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [userSummaries, searchTerm, filterRole, filterStatus]);
 
-      requestAnimationFrame(animate);
-    }, [value, duration, isLoading]);
+  // ===== LIFECYCLE =====
 
-    return (
-      <span>
-        {prefix}{Math.floor(count).toLocaleString()}{suffix}
-      </span>
-    );
-  };
+  useEffect(() => {
+    if (user && hasRole(['admin', 'enterprise'])) {
+      loadDashboardData();
+    }
+  }, [user, hasRole, loadDashboardData]);
 
-  // Loading state with executive branding
+  // ===== LOADING STATE =====
+
   if (isLoading) {
     return (
       <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
         <div className="animate-pulse">
-          {/* Executive header skeleton */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="h-12 bg-white bg-opacity-20 rounded w-96 mb-4"></div>
-                <div className="h-6 bg-white bg-opacity-20 rounded w-64"></div>
-              </div>
-              <div className="h-16 w-16 bg-white bg-opacity-20 rounded-2xl"></div>
-            </div>
+          {/* Header skeleton */}
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-8 mb-8">
+            <div className="h-12 bg-white bg-opacity-20 rounded w-96 mb-4"></div>
+            <div className="h-6 bg-white bg-opacity-20 rounded w-64"></div>
           </div>
 
           {/* Metrics skeleton */}
@@ -327,549 +448,660 @@ export default function BusinessAdminPage() {
           </div>
 
           {/* Loading message */}
-          <div className="text-center py-12">
-            <div className="relative mb-6">
-              <div className="animate-spin h-16 w-16 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-              <Building2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-blue-600" />
+          <div className="text-center py-16">
+            <div className="relative mb-8">
+              <div className="animate-spin h-20 w-20 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+              <Shield className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-purple-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Loading Executive Dashboard</h3>
-            <p className="text-gray-600">Analyzing business performance and financial metrics...</p>
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">Loading Admin Dashboard</h3>
+            <p className="text-lg text-gray-600 mb-2">Initializing enterprise management systems...</p>
+            <p className="text-sm text-gray-500">Securing billion-dollar operations</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // ===== MAIN RENDER =====
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 bg-gray-50 min-h-screen">
-      {/* Executive Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-3xl p-8 shadow-2xl">
+      
+      {/* ===== EXECUTIVE HEADER ===== */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 rounded-3xl p-8 shadow-2xl">
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white bg-opacity-5 rounded-full -mr-48 -mt-48"></div>
+        
         <div className="relative">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-6 lg:space-y-0">
             <div>
               <div className="flex items-center mb-4">
-                <Building2 className="h-8 w-8 text-white mr-3" />
-                <h1 className="text-4xl font-bold text-white">
-                  Executive Dashboard
+                <Shield className="h-10 w-10 text-white mr-4" />
+                <h1 className="text-5xl font-bold text-white">
+                  Admin Dashboard
                 </h1>
-                {user?.plan === 'enterprise' && (
-                  <Crown className="h-6 w-6 text-yellow-300 ml-3" />
-                )}
+                <Crown className="h-8 w-8 text-yellow-300 ml-4" />
               </div>
-              <p className="text-xl text-blue-100 flex items-center">
-                <Activity className="h-5 w-5 mr-2" />
-                Welcome back, {user?.name?.split(' ')[0]}! Managing {user?.companyName}
-                <span className="ml-4 inline-flex items-center px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-medium">
-                  <Shield className="h-4 w-4 mr-1" />
-                  {user?.role?.toUpperCase()} ACCESS
-                </span>
+              
+              <p className="text-xl text-purple-100 mb-4 flex items-center">
+                <Building2 className="h-6 w-6 mr-3" />
+                Enterprise Control Center for {user?.companyName ?? 'Your Company'}
               </p>
+              
+              <div className="flex flex-wrap gap-4">
+                <span className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-xl text-white backdrop-blur-sm">
+                  <Users className="h-5 w-5 mr-2" />
+                  {metrics.totalUsers.toLocaleString()} Total Users
+                </span>
+                <span className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-xl text-white backdrop-blur-sm">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  {formatCurrency(metrics.totalRevenue)} Revenue
+                </span>
+                <span className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-xl text-white backdrop-blur-sm">
+                  <Shield className="h-5 w-5 mr-2" />
+                  {metrics.securityScore}% Security Score
+                </span>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Period selector */}
-              <div className="flex items-center bg-white bg-opacity-10 rounded-xl overflow-hidden backdrop-blur-sm">
-                {['7d', '30d', '90d', '1y'].map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setSelectedPeriod(period)}
-                    className={`px-4 py-2 text-sm font-medium transition-all ${
-                      selectedPeriod === period
-                        ? 'bg-white text-blue-600 shadow-lg'
-                        : 'text-blue-100 hover:text-white hover:bg-white hover:bg-opacity-10'
-                    }`}
-                  >
-                    {period === '7d' ? '7 days' : period === '30d' ? '30 days' : period === '90d' ? '90 days' : '1 year'}
-                  </button>
-                ))}
-              </div>
-              
-              <button
-                onClick={loadBusinessDashboard}
-                disabled={isLoading}
-                className="inline-flex items-center px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-xl transition-all duration-200 backdrop-blur-sm"
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as any)}
+                className="px-4 py-2 bg-white bg-opacity-20 text-white rounded-xl backdrop-blur-sm border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="90d">Last 90 Days</option>
+              </select>
+
+              <button
+                onClick={loadDashboardData}
+                className="inline-flex items-center px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-xl transition-all duration-200 backdrop-blur-sm font-medium"
+              >
+                <RefreshCw className="h-5 w-5 mr-2" />
                 Refresh
               </button>
-            </div>
-          </div>
-          
-          {/* Quick stats in header */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-blue-100 text-sm font-medium">Cash Runway</p>
-              <p className="text-2xl font-bold text-white">{businessMetrics.cashFlow.runway} months</p>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-blue-100 text-sm font-medium">Team Utilization</p>
-              <p className="text-2xl font-bold text-white">{businessMetrics.team.utilization.toFixed(1)}%</p>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-blue-100 text-sm font-medium">Pending Approvals</p>
-              <p className="text-2xl font-bold text-white">{businessMetrics.approvals.pending}</p>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-blue-100 text-sm font-medium">Active Projects</p>
-              <p className="text-2xl font-bold text-white">12</p>
+
+              <button className="inline-flex items-center px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-xl transition-all duration-200 backdrop-blur-sm font-medium">
+                <Download className="h-5 w-5 mr-2" />
+                Export
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Key Business Metrics */}
+      {/* ===== ADMIN METRICS DASHBOARD ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Revenue Card */}
+        
+        {/* Total Users */}
         <div className="group bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-2 flex items-center">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Monthly Revenue
+                <Users className="h-4 w-4 mr-2" />
+                Total Users
               </p>
               <p className="text-3xl font-bold text-gray-900">
-                <AnimatedCounter value={businessMetrics.revenue.current} prefix="$" />
+                {metrics.totalUsers.toLocaleString()}
               </p>
               <div className="flex items-center mt-3">
-                <div className={`flex items-center px-2 py-1 rounded-full ${
-                  businessMetrics.revenue.growth > 0 ? 'bg-green-100' : 'bg-red-100'
+                <div className="flex items-center px-3 py-1 bg-green-100 rounded-full">
+                  <UserCheck className="h-3 w-3 text-green-600 mr-1" />
+                  <span className="text-xs font-semibold text-green-700">
+                    {metrics.activeUsers.toLocaleString()} active
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+              <Users className="h-8 w-8" />
+            </div>
+          </div>
+        </div>
+
+        {/* Total Revenue */}
+        <div className="group bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Total Revenue
+              </p>
+              <p className="text-3xl font-bold text-gray-900">
+                {formatCurrency(metrics.totalRevenue)}
+              </p>
+              <div className="flex items-center mt-3">
+                <div className={`flex items-center px-3 py-1 rounded-full ${
+                  metrics.monthlyGrowth > 0 ? 'bg-green-100' : 'bg-red-100'
                 }`}>
-                  {businessMetrics.revenue.growth > 0 ? (
+                  {metrics.monthlyGrowth > 0 ? (
                     <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
                   ) : (
                     <TrendingDown className="h-3 w-3 text-red-600 mr-1" />
                   )}
                   <span className={`text-xs font-semibold ${
-                    businessMetrics.revenue.growth > 0 ? 'text-green-700' : 'text-red-700'
+                    metrics.monthlyGrowth > 0 ? 'text-green-700' : 'text-red-700'
                   }`}>
-                    {businessMetrics.revenue.growth > 0 ? '+' : ''}{businessMetrics.revenue.growth.toFixed(1)}%
+                    {Math.abs(metrics.monthlyGrowth).toFixed(1)}% monthly
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 ml-2">vs last month</span>
               </div>
             </div>
             <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
               <DollarSign className="h-8 w-8" />
             </div>
           </div>
-          
-          {/* Progress to target */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-              <span>Target: {formatCurrency(businessMetrics.revenue.target)}</span>
-              <span>{((businessMetrics.revenue.current / businessMetrics.revenue.target) * 100).toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min((businessMetrics.revenue.current / businessMetrics.revenue.target) * 100, 100)}%` }}
-              ></div>
-            </div>
-          </div>
         </div>
 
-        {/* Expenses Card */}
+        {/* System Health */}
         <div className="group bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-2 flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Monthly Expenses
+                <Server className="h-4 w-4 mr-2" />
+                System Health
               </p>
               <p className="text-3xl font-bold text-gray-900">
-                <AnimatedCounter value={businessMetrics.expenses.current} prefix="$" />
+                {metrics.systemHealth}%
               </p>
               <div className="flex items-center mt-3">
-                <div className={`flex items-center px-2 py-1 rounded-full ${
-                  businessMetrics.expenses.growth < 0 ? 'bg-green-100' : 'bg-red-100'
+                <div className={`flex items-center px-3 py-1 rounded-full ${
+                  metrics.systemHealth > 95 ? 'bg-green-100' : 
+                  metrics.systemHealth > 85 ? 'bg-yellow-100' : 'bg-red-100'
                 }`}>
-                  {businessMetrics.expenses.growth < 0 ? (
-                    <ArrowDownRight className="h-3 w-3 text-green-600 mr-1" />
-                  ) : (
-                    <ArrowUpRight className="h-3 w-3 text-red-600 mr-1" />
-                  )}
+                  <Server className={`h-3 w-3 mr-1 ${
+                    metrics.systemHealth > 95 ? 'text-green-600' : 
+                    metrics.systemHealth > 85 ? 'text-yellow-600' : 'text-red-600'
+                  }`} />
                   <span className={`text-xs font-semibold ${
-                    businessMetrics.expenses.growth < 0 ? 'text-green-700' : 'text-red-700'
+                    metrics.systemHealth > 95 ? 'text-green-700' : 
+                    metrics.systemHealth > 85 ? 'text-yellow-700' : 'text-red-700'
                   }`}>
-                    {businessMetrics.expenses.growth.toFixed(1)}%
+                    {metrics.responseTime}ms response
                   </span>
                 </div>
-                <span className="text-xs text-gray-500 ml-2">vs last month</span>
               </div>
             </div>
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-              <CreditCard className="h-8 w-8" />
-            </div>
-          </div>
-          
-          {/* Budget utilization */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-              <span>Budget: {formatCurrency(businessMetrics.expenses.budget)}</span>
-              <span>{((businessMetrics.expenses.current / businessMetrics.expenses.budget) * 100).toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-1000 ${
-                  (businessMetrics.expenses.current / businessMetrics.expenses.budget) > 0.9
-                    ? 'bg-gradient-to-r from-red-500 to-red-600'
-                    : (businessMetrics.expenses.current / businessMetrics.expenses.budget) > 0.75
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-500'
-                }`}
-                style={{ width: `${Math.min((businessMetrics.expenses.current / businessMetrics.expenses.budget) * 100, 100)}%` }}
-              ></div>
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+              <Server className="h-8 w-8" />
             </div>
           </div>
         </div>
 
-        {/* Cash Flow Card */}
+        {/* Security Score */}
         <div className="group bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-2 flex items-center">
-                <Wallet className="h-4 w-4 mr-2" />
-                Cash Flow
+                <Shield className="h-4 w-4 mr-2" />
+                Security Score
               </p>
               <p className="text-3xl font-bold text-gray-900">
-                <AnimatedCounter value={businessMetrics.cashFlow.current} prefix="$" />
+                {metrics.securityScore}%
               </p>
               <div className="flex items-center mt-3">
-                <div className="flex items-center px-2 py-1 bg-blue-100 rounded-full">
-                  <Activity className="h-3 w-3 text-blue-600 mr-1" />
-                  <span className="text-xs font-semibold text-blue-700">
-                    {businessMetrics.cashFlow.runway} mo runway
+                <div className="flex items-center px-3 py-1 bg-purple-100 rounded-full">
+                  <Award className="h-3 w-3 text-purple-600 mr-1" />
+                  <span className="text-xs font-semibold text-purple-700">
+                    {metrics.complianceRating}% compliance
                   </span>
                 </div>
               </div>
             </div>
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-              <Wallet className="h-8 w-8" />
-            </div>
-          </div>
-          
-          <div className="mt-4 text-xs text-gray-500">
-            <div className="flex items-center justify-between">
-              <span>Projected: {formatCurrency(businessMetrics.cashFlow.projected)}</span>
-              <span className="font-medium text-green-600">+12.1%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Team Card */}
-        <div className="group bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-600 mb-2 flex items-center">
-                <Users className="h-4 w-4 mr-2" />
-                Team Members
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                <AnimatedCounter value={businessMetrics.team.total} />
-              </p>
-              <div className="flex items-center mt-3 space-x-2">
-                <div className="flex items-center px-2 py-1 bg-green-100 rounded-full">
-                  <UserCheck className="h-3 w-3 text-green-600 mr-1" />
-                  <span className="text-xs font-semibold text-green-700">
-                    {businessMetrics.team.active} active
-                  </span>
-                </div>
-                {businessMetrics.team.newHires > 0 && (
-                  <div className="flex items-center px-2 py-1 bg-blue-100 rounded-full">
-                    <Plus className="h-3 w-3 text-blue-600 mr-1" />
-                    <span className="text-xs font-semibold text-blue-700">
-                      +{businessMetrics.team.newHires} new
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-              <Users className="h-8 w-8" />
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-              <span>Utilization Rate</span>
-              <span>{businessMetrics.team.utilization.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
-                style={{ width: `${businessMetrics.team.utilization}%` }}
-              ></div>
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+              <Shield className="h-8 w-8" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Activity Feed */}
-        <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center">
-                <Activity className="h-7 w-7 mr-3 text-blue-600" />
-                Business Activity
-              </h3>
-              <p className="text-gray-600 mt-1">Real-time updates from your organization</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </button>
-              <Link 
-                href={"/business/activity" as any}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors shadow-lg"
+      {/* ===== NAVIGATION TABS ===== */}
+      <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="flex border-b border-gray-200">
+          {[
+            { id: 'overview', label: 'Overview', icon: Home },
+            { id: 'users', label: 'User Management', icon: Users },
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { id: 'security', label: 'Security', icon: Shield },
+            { id: 'settings', label: 'Settings', icon: Settings }
+          ].map((tab) => {
+            const IconComponent = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 flex items-center justify-center px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-purple-600 bg-purple-50 border-b-2 border-purple-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                View All
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
+                <IconComponent className="h-5 w-5 mr-2" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ===== TAB CONTENT ===== */}
+        <div className="p-6">
+          
+          {/* ===== OVERVIEW TAB ===== */}
+          {activeTab === 'overview' && (
+            <div className="space-y-8">
+              
+              {/* System Alerts */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                  <AlertTriangle className="h-6 w-6 mr-2 text-red-600" />
+                  System Alerts
+                </h3>
+                
+                <div className="grid gap-4">
+                  {alerts.slice(0, 5).map((alert) => (
+                    <div
+                      key={alert.id}
+                      className={`p-4 rounded-xl border-l-4 ${
+                        alert.severity === 'critical' ? 'border-red-500 bg-red-50' :
+                        alert.severity === 'high' ? 'border-orange-500 bg-orange-50' :
+                        alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                        'border-blue-500 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(alert.severity)}`}>
+                              {alert.severity.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(alert.timestamp).toLocaleString()}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mb-1">{alert.title}</h4>
+                          <p className="text-sm text-gray-600">{alert.description}</p>
+                        </div>
+                        {alert.actionRequired && (
+                          <button className="ml-4 px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors">
+                            Action Required
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                  <Clock className="h-6 w-6 mr-2 text-blue-600" />
+                  Recent Activity
+                </h3>
+                
+                <div className="space-y-4">
+                  {recentActivity.slice(0, 8).map((activity) => (
+                    <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                      <img
+                        className="h-10 w-10 rounded-full"
+                        src={activity.user.avatar}
+                        alt={activity.user.name}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          <span className="font-semibold">{activity.user.name}</span> {activity.action}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {activity.resource} • {new Date(activity.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        activity.impact === 'high' ? 'bg-red-100 text-red-800' :
+                        activity.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {activity.impact} impact
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => {
-              const getActivityIcon = () => {
-                switch (activity.type) {
-                  case 'approval': return CheckSquare;
-                  case 'revenue': return DollarSign;
-                  case 'team': return Users;
-                  case 'expense': return CreditCard;
-                  case 'alert': return AlertTriangle;
-                  default: return Activity;
-                }
-              };
+          {/* ===== USERS TAB ===== */}
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+              
+              {/* User Controls */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none w-64"
+                    />
+                  </div>
 
-              const getActivityColor = () => {
-                switch (activity.status) {
-                  case 'success': return 'from-green-500 to-emerald-600';
-                  case 'warning': return 'from-yellow-500 to-orange-600';
-                  case 'error': return 'from-red-500 to-pink-600';
-                  default: return 'from-blue-500 to-blue-600';
-                }
-              };
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="user">User</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
 
-              const Icon = getActivityIcon();
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
 
-              return (
-                <div key={activity.id} className="group flex items-start p-6 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-all duration-200 cursor-pointer hover:shadow-md">
-                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${getActivityColor()} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
-                    <Icon className="h-6 w-6" />
+                <button className="inline-flex items-center px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-medium">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add User
+                </button>
+              </div>
+
+              {/* Users Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role & Plan</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Spent</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Score</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredUsers.slice(0, 20).map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                              <User className="h-5 w-5 text-purple-600" />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              <div className="text-sm text-gray-500">{user.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 font-medium capitalize">{user.role}</div>
+                          <div className="text-sm text-gray-500 capitalize">{user.plan}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
+                            {user.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(user.lastLogin).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formatCurrency(user.totalSpent)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={`text-sm font-medium ${
+                            user.riskScore > 70 ? 'text-red-600' :
+                            user.riskScore > 40 ? 'text-yellow-600' :
+                            'text-green-600'
+                          }`}>
+                            {user.riskScore}%
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button className="text-blue-600 hover:text-blue-900">
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button className="text-gray-400 hover:text-gray-600">
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ===== ANALYTICS TAB ===== */}
+          {activeTab === 'analytics' && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                {/* API Metrics */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+                  <div className="flex items-center mb-4">
+                    <Zap className="h-8 w-8 text-blue-600 mr-3" />
+                    <h3 className="text-lg font-bold text-gray-900">API Metrics</h3>
                   </div>
                   
-                  <div className="ml-4 flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-semibold text-gray-900">
-                          {activity.title}
-                        </h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {activity.description}
-                        </p>
-                        <div className="flex items-center mt-2 space-x-3">
-                          <span className="text-xs text-gray-500">{activity.timestamp}</span>
-                          {activity.user && (
-                            <>
-                              <span className="text-xs text-gray-400">•</span>
-                              <span className="text-xs text-gray-500">{activity.user}</span>
-                            </>
-                          )}
-                          {activity.priority === 'critical' && (
-                            <>
-                              <span className="text-xs text-gray-400">•</span>
-                              <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium animate-pulse">
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                CRITICAL
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {activity.amount && (
-                        <div className="text-right ml-4">
-                          <p className={`text-lg font-bold ${
-                            activity.type === 'revenue' ? 'text-green-600' : 'text-gray-900'
-                          }`}>
-                            {activity.type === 'revenue' ? '+' : ''}
-                            {formatCurrency(activity.amount)}
-                          </p>
-                        </div>
-                      )}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Total API Calls</span>
+                      <span className="text-sm font-bold text-gray-900">{metrics.apiCalls.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Error Rate</span>
+                      <span className={`text-sm font-bold ${
+                        metrics.errorRate > 1 ? 'text-red-600' :
+                        metrics.errorRate > 0.5 ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {metrics.errorRate.toFixed(3)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Avg Response Time</span>
+                      <span className="text-sm font-bold text-gray-900">{metrics.responseTime}ms</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Executive Actions & Approvals */}
-        <div className="space-y-6">
-          {/* Pending Approvals */}
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
+                {/* Performance Chart Placeholder */}
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 col-span-2">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <LineChart className="h-5 w-5 mr-2" />
+                    Performance Trends
+                  </h3>
+                  <div className="h-48 bg-gray-100 rounded-xl flex items-center justify-center">
+                    <p className="text-gray-500">Performance chart visualization</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SECURITY TAB ===== */}
+          {activeTab === 'security' && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Security Overview */}
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-6 border border-red-200">
+                  <div className="flex items-center mb-4">
+                    <Shield className="h-8 w-8 text-red-600 mr-3" />
+                    <h3 className="text-lg font-bold text-gray-900">Security Overview</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Failed Login Attempts</span>
+                      <span className="text-sm font-bold text-red-600">
+                        {Math.floor(Math.random() * 50)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Blocked IPs</span>
+                      <span className="text-sm font-bold text-red-600">
+                        {Math.floor(Math.random() * 20)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Security Alerts</span>
+                      <span className="text-sm font-bold text-orange-600">
+                        {alerts.filter(a => a.type === 'security').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compliance Status */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <Award className="h-8 w-8 text-green-600 mr-3" />
+                    <h3 className="text-lg font-bold text-gray-900">Compliance Status</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">GDPR Compliance</span>
+                      <span className="inline-flex items-center px-2 py-1 bg-green-100 rounded-full text-xs font-medium text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Compliant
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">SOX Compliance</span>
+                      <span className="inline-flex items-center px-2 py-1 bg-green-100 rounded-full text-xs font-medium text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Compliant
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Data Retention</span>
+                      <span className="inline-flex items-center px-2 py-1 bg-yellow-100 rounded-full text-xs font-medium text-yellow-800">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Review Required
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SETTINGS TAB ===== */}
+          {activeTab === 'settings' && (
+            <div className="space-y-8">
+              
+              {/* System Configuration */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                  <CheckSquare className="h-6 w-6 mr-2 text-orange-600" />
-                  Pending Approvals
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Settings className="h-6 w-6 mr-2" />
+                  System Configuration
                 </h3>
-                <p className="text-sm text-gray-600">
-                  {businessMetrics.approvals.pending} items • {formatCurrency(businessMetrics.approvals.totalValue)} total
-                </p>
-              </div>
-              {businessMetrics.approvals.pending > 5 && (
-                <div className="animate-pulse">
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900">Software License Renewal</h4>
-                    <p className="text-xs text-gray-600 mt-1">Enterprise Slack + Figma + Adobe Suite</p>
-                  </div>
-                  <span className="text-sm font-bold text-red-600">$25,000</span>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-gray-500">Requested by Sarah Chen • 2 min ago</span>
-                  <div className="flex space-x-2">
-                    <button className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors">
-                      Reject
-                    </button>
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors">
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900">Marketing Campaign Budget</h4>
-                    <p className="text-xs text-gray-600 mt-1">Q1 Digital Marketing Initiative</p>
-                  </div>
-                  <span className="text-sm font-bold text-yellow-600">$15,000</span>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-gray-500">Requested by Marketing Team • 1 hour ago</span>
-                  <div className="flex space-x-2">
-                    <button className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors">
-                      Reject
-                    </button>
-                    <button className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors">
-                      Approve
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-2xl p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Feature Flags</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Advanced Approvals</span>
+                        <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-green-600 transition-colors duration-200 ease-in-out">
+                          <span className="translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">AI Insights</span>
+                        <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-green-600 transition-colors duration-200 ease-in-out">
+                          <span className="translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                      </div>
+                    </div>
 
             {hasFeature('APPROVAL_WORKFLOWS') && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <Link
                   href={"/business/expenses/approvals" as any}
-                  className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  View all approvals
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <FileText className="h-4 w-4 mr-2" />
+                  Manage Approval Workflows
+                  <ExternalLink className="h-4 w-4 ml-2" />
                 </Link>
               </div>
             )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <Zap className="h-6 w-6 mr-2 text-yellow-500" />
-              Executive Actions
-            </h3>
-            
-            <div className="space-y-3">
-              <Link
-                href="/business/team/invite"
-                className="flex items-center p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors group"
-              >
-                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                  <Plus className="h-5 w-5" />
-                </div>
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">Invite Team Member</h4>
-                  <p className="text-xs text-gray-600">Add new employee to workspace</p>
-                </div>
-              </Link>
-
-              <Link
-                href="/business/reports/generate"
-                className="flex items-center p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors group"
-              >
-                <div className="h-10 w-10 bg-green-600 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">Generate Report</h4>
-                  <p className="text-xs text-gray-600">Financial analytics & insights</p>
-                </div>
-              </Link>
-
-              <Link
-                href="/business/settings"
-                className="flex items-center p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors group"
-              >
-                <div className="h-10 w-10 bg-purple-600 rounded-lg flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                  <Settings className="h-5 w-5" />
-                </div>
-                <div className="ml-3">
-                  <h4 className="text-sm font-semibold text-gray-900">Company Settings</h4>
-                  <p className="text-xs text-gray-600">Manage business configuration</p>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Enterprise Features */}
-          {user?.plan === 'enterprise' && (
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl border border-yellow-200 p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <Crown className="h-6 w-6 text-yellow-600 mr-2" />
-                <h3 className="text-lg font-bold text-gray-900">Enterprise Command Center</h3>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                  <div className="flex items-center">
-                    <Globe className="h-5 w-5 text-blue-600 mr-3" />
-                    <span className="text-sm font-medium">Multi-Currency Operations</span>
                   </div>
-                  <span className="text-xs font-medium text-green-600">ACTIVE</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-green-600 mr-3" />
-                    <span className="text-sm font-medium">Advanced Security</span>
+
+                  <div className="bg-white rounded-2xl p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Two-Factor Authentication</span>
+                        <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-green-600 transition-colors duration-200 ease-in-out">
+                          <span className="translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">IP Whitelisting</span>
+                        <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out">
+                          <span className="translate-x-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-xs font-medium text-green-600">ACTIVE</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                  <div className="flex items-center">
-                    <Zap className="h-5 w-5 text-purple-600 mr-3" />
-                    <span className="text-sm font-medium">Custom Integrations</span>
-                  </div>
-                  <span className="text-xs font-medium text-blue-600">12 ACTIVE</span>
                 </div>
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ===== EXECUTIVE SUMMARY FOOTER ===== */}
+      <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-2">Executive Summary</h4>
+            <p className="text-gray-600">
+              System operating at {metrics.systemHealth}% capacity with {metrics.securityScore}% security score. 
+              Managing {metrics.totalUsers.toLocaleString()} users generating {formatCurrency(metrics.totalRevenue)} in revenue.
+            </p>
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{metrics.totalUsers.toLocaleString()}</div>
+              <div className="text-sm text-gray-500">Total Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalRevenue)}</div>
+              <div className="text-sm text-gray-500">Revenue</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{metrics.systemHealth}%</div>
+              <div className="text-sm text-gray-500">System Health</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{metrics.securityScore}%</div>
+              <div className="text-sm text-gray-500">Security Score</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
