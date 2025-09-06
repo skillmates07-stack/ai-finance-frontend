@@ -10,7 +10,8 @@ import { toast } from 'react-hot-toast';
  * Enterprise Features:
  * - Role-based access control (RBAC)
  * - Permission-based authorization
- * - Feature flag management with APPROVAL_WORKFLOWS (CRITICAL FIX)
+ * - Feature flag management with APPROVAL_WORKFLOWS
+ * - Account type routing (consumer/business/admin) - CRITICAL FIX
  * - JWT token handling
  * - Session management
  * - Multi-tier user plans
@@ -26,9 +27,10 @@ import { toast } from 'react-hot-toast';
 
 export type UserRole = 'admin' | 'manager' | 'user' | 'viewer' | 'enterprise';
 export type UserPlan = 'free' | 'pro' | 'business' | 'enterprise';
+export type AccountType = 'consumer' | 'business' | 'admin';
 
 /**
- * Enterprise Feature Flags Interface - FIXED WITH APPROVAL_WORKFLOWS
+ * Enterprise Feature Flags Interface - COMPLETE WITH APPROVAL_WORKFLOWS
  * Complete feature flag system for billion-dollar platform
  */
 export interface FeatureFlags {
@@ -72,7 +74,7 @@ export interface FeatureFlags {
 }
 
 /**
- * Enterprise User Interface - COMPLETE WITH COMPANY NAME
+ * Enterprise User Interface - FIXED WITH ACCOUNT TYPE
  * Complete user data structure for Fortune 500-level systems
  */
 export interface User {
@@ -84,6 +86,7 @@ export interface User {
   avatar?: string;
   department?: string;
   companyName?: string;
+  accountType?: AccountType; // ← CRITICAL FIX: Added missing account type property
   permissions: string[];
   featureFlags: FeatureFlags;
   lastLogin?: Date;
@@ -270,6 +273,7 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'DELETE_ALL',
         'APPROVE_ALL',
         'ADMIN_ACCESS',
+        'BUSINESS_ACCESS',
         'EXPORT_DATA',
         'MANAGE_USERS',
         'CONFIGURE_SYSTEM',
@@ -285,6 +289,7 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'READ_TEAM',
         'WRITE_TEAM',
         'APPROVE_TEAM',
+        'BUSINESS_ACCESS',
         'EXPORT_TEAM_DATA',
         'VIEW_TEAM_ANALYTICS',
         'MANAGE_TEAM_USERS'
@@ -372,7 +377,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Generate enterprise user with full features - FIXED WITH COMPANY NAME
+   * Generate enterprise user with full features - FIXED WITH ACCOUNT TYPE
    */
   const generateEnterpriseUser = (): User => {
     const plan: UserPlan = 'enterprise';
@@ -387,6 +392,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       avatar: 'https://ui-avatars.com/api/?name=Executive+User&background=6366f1&color=ffffff&bold=true',
       department: 'Executive',
       companyName: 'TechCorp Industries',
+      accountType: 'business', // ← CRITICAL FIX: Added account type
       permissions: getPermissionsByRole(role),
       featureFlags: getDefaultFeatureFlags(plan),
       lastLogin: new Date(),
@@ -847,3 +853,4 @@ export const useAuth = (): AuthContextType => {
 
 export default AuthProvider;
 export { AuthContext };
+export type { User, AccountType };
