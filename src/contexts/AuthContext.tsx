@@ -14,6 +14,7 @@ import { toast } from 'react-hot-toast';
  * - JWT token handling
  * - Session management
  * - Multi-tier user plans
+ * - Company branding support (CRITICAL FIX)
  * - Audit logging integration
  * - 2FA support
  * - Enterprise SSO ready
@@ -68,7 +69,7 @@ export interface FeatureFlags {
 }
 
 /**
- * Enterprise User Interface
+ * Enterprise User Interface - FIXED WITH COMPANY NAME
  * Complete user data structure for Fortune 500-level systems
  */
 export interface User {
@@ -79,6 +80,7 @@ export interface User {
   plan: UserPlan;
   avatar?: string;
   department?: string;
+  companyName?: string; // ← CRITICAL FIX: Added missing companyName property
   permissions: string[];
   featureFlags: FeatureFlags;
   lastLogin?: Date;
@@ -100,6 +102,20 @@ export interface User {
     status: 'active' | 'inactive' | 'trial' | 'cancelled';
     expiresAt?: Date;
     features: string[];
+  };
+  // Enterprise company details
+  company?: {
+    name: string;
+    industry: string;
+    size: string;
+    website?: string;
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      country: string;
+      zipCode: string;
+    };
   };
 }
 
@@ -136,6 +152,9 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   enable2FA: () => Promise<void>;
   disable2FA: () => Promise<void>;
+  
+  // Company Management
+  updateCompany: (companyData: Partial<User['company']>) => Promise<void>;
   
   // Subscription & Plan Management
   upgradePlan: (newPlan: UserPlan) => Promise<void>;
@@ -348,7 +367,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Generate enterprise user with full features (for demo)
+   * Generate enterprise user with full features - FIXED WITH COMPANY NAME
    */
   const generateEnterpriseUser = (): User => {
     const plan: UserPlan = 'enterprise';
@@ -362,6 +381,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       plan,
       avatar: 'https://ui-avatars.com/api/?name=Executive+User&background=6366f1&color=ffffff&bold=true',
       department: 'Executive',
+      companyName: 'TechCorp Industries', // ← CRITICAL FIX: Added companyName
       permissions: getPermissionsByRole(role),
       featureFlags: getDefaultFeatureFlags(plan),
       lastLogin: new Date(),
@@ -384,6 +404,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
         features: ['all'],
       },
+      company: {
+        name: 'TechCorp Industries',
+        industry: 'Financial Technology',
+        size: 'Enterprise (1000+ employees)',
+        website: 'https://techcorp.com',
+        address: {
+          street: '123 Innovation Drive',
+          city: 'San Francisco',
+          state: 'California',
+          country: 'United States',
+          zipCode: '94105'
+        }
+      }
     };
   };
 
@@ -405,8 +438,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userData);
       
       // Log successful login
-      console.log(`AUTH: User ${userData.name} logged in successfully at ${new Date().toISOString()}`);
-      toast.success('Login successful! Welcome to your billion-dollar platform.');
+      console.log(`AUTH: User ${userData.name} from ${userData.companyName} logged in successfully at ${new Date().toISOString()}`);
+      toast.success(`Welcome back to ${userData.companyName}! Your billion-dollar platform is ready.`);
       
     } catch (error) {
       console.error('Login error:', error);
@@ -430,7 +463,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = generateEnterpriseUser();
       setUser(userData);
       
-      toast.success(`SSO login successful with ${provider}!`);
+      toast.success(`SSO login successful with ${provider} for ${userData.companyName}!`);
     } catch (error) {
       console.error('SSO login error:', error);
       toast.error(`SSO login with ${provider} failed.`);
@@ -444,11 +477,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Logout method
    */
   const logout = useCallback(() => {
+    const companyName = user?.companyName || 'Your Company';
     localStorage.removeItem('auth_token');
     setUser(null);
-    toast.success('Logged out successfully.');
+    toast.success(`Logged out successfully from ${companyName}.`);
     router.push('/login');
-  }, [router]);
+  }, [router, user?.companyName]);
 
   /**
    * Refresh authentication token
@@ -576,6 +610,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
+   * Update company information
+   */
+  const updateCompany = async (companyData: Partial<User['company']>): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedUser = { 
+        ...user, 
+        company: { ...user.company, ...companyData },
+        companyName: companyData?.name || user.companyName
+      };
+      setUser(updatedUser);
+      
+      toast.success('Company information updated successfully.');
+    } catch (error) {
+      console.error('Company update error:', error);
+      toast.error('Failed to update company information.');
+      throw error;
+    }
+  };
+
+  /**
    * Change user password
    */
   const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
@@ -602,7 +661,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setUser({ ...user, twoFactorEnabled: true });
-      toast.success('Two-factor authentication enabled.');
+      toast.success('Two-factor authentication enabled for enhanced security.');
     } catch (error) {
       console.error('2FA enable error:', error);
       toast.error('Failed to enable 2FA.');
@@ -649,7 +708,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       setUser(updatedUser);
-      toast.success(`Successfully upgraded to ${newPlan} plan!`);
+      toast.success(`${user.companyName} successfully upgraded to ${newPlan} plan! New features now available.`);
     } catch (error) {
       console.error('Plan upgrade error:', error);
       toast.error('Failed to upgrade plan.');
@@ -673,7 +732,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       setUser({ ...user, subscription: updatedSubscription });
-      toast.success('Subscription cancelled successfully.');
+      toast.success(`${user.companyName} subscription cancelled successfully.`);
     } catch (error) {
       console.error('Subscription cancellation error:', error);
       toast.error('Failed to cancel subscription.');
@@ -738,6 +797,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     changePassword,
     enable2FA,
     disable2FA,
+    
+    // Company Management
+    updateCompany,
     
     // Subscription Management
     upgradePlan,
