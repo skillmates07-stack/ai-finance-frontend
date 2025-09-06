@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -16,6 +16,7 @@ import {
   Filter,
   Search,
   Download,
+  Upload, // ← CRITICAL FIX: Added missing Upload import
   RefreshCw,
   Bell,
   User,
@@ -42,7 +43,12 @@ import {
   Crown,
   Building2,
   BarChart3,
-  LineChart
+  LineChart,
+  Plus,
+  ChevronRight,
+  DollarSign,
+  Users,
+  PieChart
 } from 'lucide-react';
 
 /**
@@ -247,7 +253,7 @@ export default function ActivityMonitoringPage() {
       { type: 'desktop' as const, os: 'Ubuntu 22.04', browser: 'Firefox 119' }
     ];
 
-    return Array.from({ length: 150 }, (_, i) => {
+    return Array.from({ length: 200 }, (_, i) => {
       const type = activityTypes[Math.floor(Math.random() * activityTypes.length)];
       const severity = severities[Math.floor(Math.random() * severities.length)];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
@@ -586,70 +592,45 @@ export default function ActivityMonitoringPage() {
     setFilteredActivities(filtered);
   }, [activities, searchTerm, filterType, filterSeverity, filterStatus, filterTimeRange, showAnomalousOnly]);
 
-  // ===== LIFECYCLE AND EFFECTS =====
+  // ===== UTILITY FUNCTIONS =====
 
   /**
-   * Load initial activity data
+   * Get activity type icon with FIXED Upload reference
    */
-  useEffect(() => {
-    const loadActivityData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Simulate loading delay for realistic experience
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const activityData = generateEnterpriseActivityData();
-        setActivities(activityData);
-        
-        const calculatedMetrics = calculateActivityMetrics(activityData);
-        setMetrics(calculatedMetrics);
-        
-        toast.success('Activity data loaded successfully');
-        
-      } catch (error) {
-        console.error('Error loading activity data:', error);
-        toast.error('Failed to load activity data. Please refresh and try again.');
-      } finally {
-        setIsLoading(false);
-      }
+  const getActivityIcon = (type: ActivityType) => {
+    const iconMap = {
+      login: UserCheck,
+      logout: UserX,
+      payment: CreditCard,
+      transfer: TrendingUp,
+      approval: CheckCircle,
+      rejection: XCircle,
+      export: Download,
+      import: Upload, // ← FIXED: Now properly references imported Upload icon
+      delete: XCircle,
+      create: Plus,
+      update: Settings,
+      view: Eye,
+      download: Download,
+      upload: Upload, // ← FIXED: Upload icon properly used here too
+      configuration: Settings,
+      security: Shield,
+      compliance: Award,
+      system: Server,
+      integration: Globe,
+      api_call: Zap,
+      bulk_operation: Database,
+      password_change: Lock,
+      profile_update: User,
+      permission_change: Shield,
+      role_assignment: UserCheck,
+      data_access: FileText,
+      report_generation: BarChart3
     };
     
-    loadActivityData();
-  }, [generateEnterpriseActivityData]);
-
-  /**
-   * Apply filters when filter criteria change
-   */
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
-  /**
-   * Real-time activity updates (simulated with WebSocket-like behavior)
-   */
-  useEffect(() => {
-    if (!isRealTimeEnabled) return;
-    
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) { // 30% chance of new activity every 5 seconds
-        const newActivity = generateEnterpriseActivityData().slice(0, 1)[0];
-        newActivity.timestamp = new Date().toISOString();
-        newActivity.id = `ACT-${Date.now()}`;
-        
-        setActivities(prev => [newActivity, ...prev.slice(0, 149)]); // Keep latest 150
-        
-        // Show toast for critical activities
-        if (newActivity.severity === 'critical' || newActivity.isAnomalous) {
-          toast.error(`🚨 Critical Activity: ${newActivity.title}`);
-        }
-      }
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [isRealTimeEnabled, generateEnterpriseActivityData]);
-
-  // ===== UTILITY FUNCTIONS =====
+    const IconComponent = iconMap[type] || Activity;
+    return IconComponent;
+  };
 
   /**
    * Get severity color for UI styling
@@ -685,43 +666,68 @@ export default function ActivityMonitoringPage() {
     }
   };
 
+  // ===== LIFECYCLE AND EFFECTS =====
+
   /**
-   * Get activity type icon
+   * Load initial activity data
    */
-  const getActivityIcon = (type: ActivityType) => {
-    const iconMap = {
-      login: UserCheck,
-      logout: UserX,
-      payment: CreditCard,
-      transfer: TrendingUp,
-      approval: CheckCircle,
-      rejection: XCircle,
-      export: Download,
-      import: Upload,
-      delete: XCircle,
-      create: Plus,
-      update: Settings,
-      view: Eye,
-      download: Download,
-      upload: Upload,
-      configuration: Settings,
-      security: Shield,
-      compliance: Award,
-      system: Server,
-      integration: Globe,
-      api_call: Zap,
-      bulk_operation: Database,
-      password_change: Lock,
-      profile_update: User,
-      permission_change: Shield,
-      role_assignment: UserCheck,
-      data_access: FileText,
-      report_generation: BarChart3
+  useEffect(() => {
+    const loadActivityData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Simulate loading delay for realistic experience
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const activityData = generateEnterpriseActivityData();
+        setActivities(activityData);
+        
+        const calculatedMetrics = calculateActivityMetrics(activityData);
+        setMetrics(calculatedMetrics);
+        
+        toast.success('Activity monitoring system online');
+        
+      } catch (error) {
+        console.error('Error loading activity data:', error);
+        toast.error('Failed to load activity data. Please refresh and try again.');
+      } finally {
+        setIsLoading(false);
+      }
     };
     
-    const IconComponent = iconMap[type] || Activity;
-    return IconComponent;
-  };
+    loadActivityData();
+  }, [generateEnterpriseActivityData]);
+
+  /**
+   * Apply filters when filter criteria change
+   */
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  /**
+   * Real-time activity updates (simulated with WebSocket-like behavior)
+   */
+  useEffect(() => {
+    if (!isRealTimeEnabled) return;
+    
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) { // 30% chance of new activity every 5 seconds
+        const newActivity = generateEnterpriseActivityData().slice(0, 1)[0];
+        newActivity.timestamp = new Date().toISOString();
+        newActivity.id = `ACT-${Date.now()}`;
+        
+        setActivities(prev => [newActivity, ...prev.slice(0, 199)]); // Keep latest 200
+        
+        // Show toast for critical activities
+        if (newActivity.severity === 'critical' || newActivity.isAnomalous) {
+          toast.error(`🚨 Critical Activity: ${newActivity.title}`);
+        }
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isRealTimeEnabled, generateEnterpriseActivityData]);
 
   // ===== LOADING STATE =====
 
@@ -784,18 +790,18 @@ export default function ActivityMonitoringPage() {
                 )}
               </div>
               
-              <p className="text-lg text-gray-600 mt-2 flex items-center">
-                <Clock className="h-5 w-5 mr-2" />
+              <p className="text-xl text-purple-100 mb-4 flex items-center">
+                <Clock className="h-6 w-6 mr-3" />
                 Real-time monitoring for {user?.companyName ?? 'Your Company'} • {activities.length} activities
                 {hasFeature('AUDIT_LOGS') && (
-                  <span className="ml-4 inline-flex items-center px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full font-medium">
-                    <Shield className="h-3 w-3 mr-1" />
+                  <span className="ml-4 inline-flex items-center px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm font-medium">
+                    <Shield className="h-4 w-4 mr-1" />
                     Audit Logging Active
                   </span>
                 )}
               </p>
               
-              <div className="flex flex-wrap gap-4 mt-4">
+              <div className="flex flex-wrap gap-4">
                 <span className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-xl text-white backdrop-blur-sm">
                   <Target className="h-5 w-5 mr-2" />
                   {metrics.complianceScore}% Compliance Score
@@ -986,6 +992,8 @@ export default function ActivityMonitoringPage() {
               <option value="approval">Approval</option>
               <option value="security">Security</option>
               <option value="configuration">Configuration</option>
+              <option value="upload">Upload</option>
+              <option value="download">Download</option>
             </select>
 
             {/* Severity Filter */}
@@ -1064,7 +1072,7 @@ export default function ActivityMonitoringPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {filteredActivities.map((activity) => {
+              {filteredActivities.slice(0, 50).map((activity) => {
                 const IconComponent = getActivityIcon(activity.type);
                 
                 return (
