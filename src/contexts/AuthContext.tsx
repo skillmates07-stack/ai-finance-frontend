@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
 /**
- * BILLION-DOLLAR AUTHENTICATION SYSTEM - COMPLETE WITH ALL FIXES
+ * BILLION-DOLLAR AUTHENTICATION SYSTEM - COMPLETE WITH ALL FIXES INCLUDING AI_BUDGET_OPTIMIZER
  * 
  * Enterprise Features:
  * - Role-based access control (RBAC)
  * - Permission-based authorization
- * - Feature flag management with APPROVAL_WORKFLOWS (FIXED)
+ * - Feature flag management with APPROVAL_WORKFLOWS and AI_BUDGET_OPTIMIZER (FIXED)
  * - Account type routing (consumer/business/admin) (FIXED)
  * - Financial goals management (FIXED)
  * - JWT token handling
@@ -47,7 +47,7 @@ export interface Goal {
 }
 
 /**
- * Enterprise Feature Flags Interface - COMPLETE WITH APPROVAL_WORKFLOWS
+ * Enterprise Feature Flags Interface - COMPLETE WITH AI_BUDGET_OPTIMIZER
  * Complete feature flag system for billion-dollar platform
  */
 export interface FeatureFlags {
@@ -87,11 +87,20 @@ export interface FeatureFlags {
   AUDIT_LOGS: boolean;
   WHITE_LABEL_API: boolean;
   
-  // ← CRITICAL FIX: Added missing feature flags
+  // AI & ML Features
+  AI_BUDGET_OPTIMIZER: boolean; // ← CRITICAL FIX: Added missing AI budget optimizer feature
+  AI_SPENDING_INSIGHTS: boolean;
+  AI_INVESTMENT_ADVISOR: boolean;
+  AI_FRAUD_DETECTION: boolean;
+  
+  // Consumer Features
   APPROVAL_WORKFLOWS: boolean;
   FINANCIAL_GOALS: boolean;
   BUDGET_TRACKING: boolean;
   EXPENSE_CATEGORIZATION: boolean;
+  SMART_NOTIFICATIONS: boolean;
+  SPENDING_ALERTS: boolean;
+  CASHFLOW_FORECASTING: boolean;
 }
 
 /**
@@ -209,7 +218,7 @@ interface AuthContextType {
   getSessionInfo: () => { expiresAt: Date; isActive: boolean };
 }
 
-// ===== DEFAULT FEATURE FLAGS BY PLAN - FIXED WITH ALL FLAGS =====
+// ===== DEFAULT FEATURE FLAGS BY PLAN - FIXED WITH AI_BUDGET_OPTIMIZER =====
 
 const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
   const baseFlags: FeatureFlags = {
@@ -239,13 +248,30 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
     RATE_LIMITING: false,
     AUDIT_LOGS: false,
     WHITE_LABEL_API: false,
-    APPROVAL_WORKFLOWS: false, // ← CRITICAL FIX: Added missing flags
+    AI_BUDGET_OPTIMIZER: false, // ← CRITICAL FIX: Added missing AI feature
+    AI_SPENDING_INSIGHTS: false,
+    AI_INVESTMENT_ADVISOR: false,
+    AI_FRAUD_DETECTION: false,
+    APPROVAL_WORKFLOWS: false,
     FINANCIAL_GOALS: false,
     BUDGET_TRACKING: false,
     EXPENSE_CATEGORIZATION: false,
+    SMART_NOTIFICATIONS: false,
+    SPENDING_ALERTS: false,
+    CASHFLOW_FORECASTING: false,
   };
 
   switch (plan) {
+    case 'free':
+      return {
+        ...baseFlags,
+        FINANCIAL_GOALS: true, // Free users get basic goal tracking
+        EXPENSE_CATEGORIZATION: true,
+        BUDGET_TRACKING: true,
+        SMART_NOTIFICATIONS: true,
+        SPENDING_ALERTS: true,
+      };
+
     case 'pro':
       return {
         ...baseFlags,
@@ -259,11 +285,16 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         REAL_TIME_SETTLEMENTS: true,
         RISK_MANAGEMENT: true,
         AUDIT_LOGS: true,
-        APPROVAL_WORKFLOWS: true, // ← Pro users get approval workflows
+        INVESTMENT_TRACKING: true,
+        AI_BUDGET_OPTIMIZER: true, // ← Pro users get AI budget optimizer
+        AI_SPENDING_INSIGHTS: true,
+        APPROVAL_WORKFLOWS: true,
         FINANCIAL_GOALS: true,
         BUDGET_TRACKING: true,
         EXPENSE_CATEGORIZATION: true,
-        INVESTMENT_TRACKING: true,
+        SMART_NOTIFICATIONS: true,
+        SPENDING_ALERTS: true,
+        CASHFLOW_FORECASTING: true,
       };
     
     case 'business':
@@ -291,25 +322,27 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         SANDBOX_ENVIRONMENT: true,
         RATE_LIMITING: true,
         AUDIT_LOGS: true,
-        APPROVAL_WORKFLOWS: true, // ← Business users get approval workflows
+        AI_BUDGET_OPTIMIZER: true, // ← Business users get AI features
+        AI_SPENDING_INSIGHTS: true,
+        AI_INVESTMENT_ADVISOR: true,
+        APPROVAL_WORKFLOWS: true,
         FINANCIAL_GOALS: true,
         BUDGET_TRACKING: true,
         EXPENSE_CATEGORIZATION: true,
+        SMART_NOTIFICATIONS: true,
+        SPENDING_ALERTS: true,
+        CASHFLOW_FORECASTING: true,
       };
     
     case 'enterprise':
-      // Enterprise gets ALL features including APPROVAL_WORKFLOWS
+      // Enterprise gets ALL features including AI_BUDGET_OPTIMIZER
       return Object.keys(baseFlags).reduce((acc, key) => {
         acc[key as keyof FeatureFlags] = true;
         return acc;
       }, {} as FeatureFlags);
     
-    default: // free plan
-      return {
-        ...baseFlags,
-        FINANCIAL_GOALS: true, // Free users get basic goal tracking
-        EXPENSE_CATEGORIZATION: true,
-      };
+    default:
+      return baseFlags;
   }
 };
 
@@ -336,7 +369,8 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'MANAGE_BILLING',
         'AUDIT_ACCESS',
         'SECURITY_ADMIN',
-        'MANAGE_FINANCIAL_GOALS'
+        'MANAGE_FINANCIAL_GOALS',
+        'USE_AI_FEATURES'
       ];
     
     case 'manager':
@@ -349,7 +383,8 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'EXPORT_TEAM_DATA',
         'VIEW_TEAM_ANALYTICS',
         'MANAGE_TEAM_USERS',
-        'MANAGE_FINANCIAL_GOALS'
+        'MANAGE_FINANCIAL_GOALS',
+        'USE_AI_FEATURES'
       ];
     
     case 'user':
@@ -476,30 +511,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         category: 'investment',
         progress: 25.0,
         description: 'Long-term retirement investment portfolio',
-        priority: 'high',
-        status: 'active'
-      },
-      {
-        id: 'goal-4',
-        title: 'New Car',
-        targetAmount: 45000,
-        currentAmount: 15000,
-        deadline: new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        category: 'purchase',
-        progress: 33.3,
-        description: 'Luxury electric vehicle purchase',
-        priority: 'low',
-        status: 'active'
-      },
-      {
-        id: 'goal-5',
-        title: 'Credit Card Debt',
-        targetAmount: 12000,
-        currentAmount: 7000,
-        deadline: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        category: 'debt',
-        progress: 58.3,
-        description: 'Pay off high-interest credit card debt',
         priority: 'high',
         status: 'active'
       }
