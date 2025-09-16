@@ -37,7 +37,7 @@ import {
   Settings,
   Shield,
   Star,
-  ChevronRight as TrendingRightIcon, // ← CRITICAL FIX: Using ChevronRight instead of non-existent TrendingRightIcon
+  ChevronRight as TrendingRightIcon,
   Activity,
   Wallet,
   Globe,
@@ -64,7 +64,7 @@ import {
 } from 'lucide-react';
 
 /**
- * BILLION-DOLLAR CONSUMER DASHBOARD
+ * BILLION-DOLLAR CONSUMER DASHBOARD - FIXED UNION TYPES
  * 
  * Enterprise Features:
  * - Personal financial analytics with AI insights
@@ -81,6 +81,7 @@ import {
  * - Professional-grade data visualization
  * - Mobile-responsive Fortune 500 design
  * - Advanced privacy and security controls
+ * - FIXED: Proper TypeScript union type handling
  */
 
 // ===== ENTERPRISE TYPE DEFINITIONS =====
@@ -98,13 +99,13 @@ interface FinancialMetrics {
 
 interface Transaction {
   id: string;
-  type: 'income' | 'expense' | 'transfer';
+  type: 'income' | 'expense' | 'transfer'; // ← UNION TYPE DEFINITION
   amount: number;
   description: string;
   category: string;
   date: string;
   account: string;
-  status: 'completed' | 'pending' | 'failed';
+  status: 'completed' | 'pending' | 'failed'; // ← UNION TYPE DEFINITION
   merchant?: {
     name: string;
     logo?: string;
@@ -118,7 +119,7 @@ interface BudgetCategory {
   spent: number;
   remaining: number;
   percentage: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: 'up' | 'down' | 'stable'; // ← UNION TYPE DEFINITION
 }
 
 interface InvestmentHolding {
@@ -138,7 +139,7 @@ interface Goal {
   targetAmount: number;
   currentAmount: number;
   deadline: string;
-  category: 'savings' | 'investment' | 'debt' | 'purchase';
+  category: 'savings' | 'investment' | 'debt' | 'purchase'; // ← UNION TYPE DEFINITION
   progress: number;
 }
 
@@ -218,7 +219,7 @@ export default function ConsumerDashboard() {
   }, []);
 
   /**
-   * Generate realistic transaction data
+   * Generate realistic transaction data - FIXED UNION TYPES
    */
   const generateTransactions = useCallback((): Transaction[] => {
     const categories = [
@@ -240,12 +241,14 @@ export default function ConsumerDashboard() {
     ];
 
     return Array.from({ length: 50 }, (_, i) => {
-      const type = Math.random() > 0.8 ? 'income' : Math.random() > 0.9 ? 'transfer' : 'expense';
+      // ← CRITICAL FIX: Explicitly type the union types
+      const type: 'income' | 'expense' | 'transfer' = Math.random() > 0.8 ? 'income' : Math.random() > 0.9 ? 'transfer' : 'expense';
+      const status: 'completed' | 'pending' | 'failed' = Math.random() > 0.95 ? 'pending' : Math.random() > 0.98 ? 'failed' : 'completed';
       const merchant = merchants[Math.floor(Math.random() * merchants.length)];
       
       return {
         id: `txn-${i + 1}`,
-        type,
+        type, // ← Now properly typed as union type
         amount: type === 'income' ? 
           Math.floor(Math.random() * 5000) + 1000 : 
           Math.floor(Math.random() * 300) + 10,
@@ -253,7 +256,7 @@ export default function ConsumerDashboard() {
         category: categories[Math.floor(Math.random() * categories.length)],
         date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
         account: Math.random() > 0.5 ? 'Checking Account' : 'Credit Card',
-        status: Math.random() > 0.95 ? 'pending' : 'completed',
+        status, // ← Now properly typed as union type
         merchant: type !== 'income' ? {
           name: merchant.name,
           logo: merchant.logo,
@@ -264,7 +267,7 @@ export default function ConsumerDashboard() {
   }, []);
 
   /**
-   * Generate budget categories data
+   * Generate budget categories data - FIXED UNION TYPES
    */
   const generateBudgetCategories = useCallback((): BudgetCategory[] => {
     const categories = [
@@ -282,13 +285,16 @@ export default function ConsumerDashboard() {
       const remaining = allocated - spent;
       const percentage = (spent / allocated) * 100;
       
+      // ← CRITICAL FIX: Explicitly type the trend as union type
+      const trend: 'up' | 'down' | 'stable' = Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'down' : 'stable';
+      
       return {
         name,
         allocated,
         spent,
         remaining,
         percentage,
-        trend: Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'down' : 'stable'
+        trend // ← Now properly typed as union type
       };
     });
   }, []);
@@ -326,7 +332,7 @@ export default function ConsumerDashboard() {
   }, []);
 
   /**
-   * Generate financial goals data
+   * Generate financial goals data - FIXED UNION TYPES
    */
   const generateGoals = useCallback((): Goal[] => {
     const goalTemplates = [
