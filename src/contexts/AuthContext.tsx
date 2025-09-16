@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
 /**
- * BILLION-DOLLAR AUTHENTICATION SYSTEM
+ * BILLION-DOLLAR AUTHENTICATION SYSTEM - COMPLETE WITH ALL FIXES
  * 
  * Enterprise Features:
  * - Role-based access control (RBAC)
  * - Permission-based authorization
- * - Feature flag management with APPROVAL_WORKFLOWS
- * - Account type routing (consumer/business/admin) - CRITICAL FIX
+ * - Feature flag management with APPROVAL_WORKFLOWS (FIXED)
+ * - Account type routing (consumer/business/admin) (FIXED)
+ * - Financial goals management (FIXED)
  * - JWT token handling
  * - Session management
  * - Multi-tier user plans
@@ -28,6 +29,22 @@ import { toast } from 'react-hot-toast';
 export type UserRole = 'admin' | 'manager' | 'user' | 'viewer' | 'enterprise';
 export type UserPlan = 'free' | 'pro' | 'business' | 'enterprise';
 export type AccountType = 'consumer' | 'business' | 'admin';
+
+/**
+ * Financial Goal Interface for User Goals
+ */
+export interface Goal {
+  id: string;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  category: 'savings' | 'investment' | 'debt' | 'purchase';
+  progress: number;
+  description?: string;
+  priority?: 'high' | 'medium' | 'low';
+  status?: 'active' | 'paused' | 'completed';
+}
 
 /**
  * Enterprise Feature Flags Interface - COMPLETE WITH APPROVAL_WORKFLOWS
@@ -61,6 +78,7 @@ export interface FeatureFlags {
   INTERNATIONAL_TRANSFERS: boolean;
   RISK_MANAGEMENT: boolean;
   FRAUD_DETECTION: boolean;
+  INVESTMENT_TRACKING: boolean;
   
   // Developer Features
   WEBHOOK_SUPPORT: boolean;
@@ -69,12 +87,15 @@ export interface FeatureFlags {
   AUDIT_LOGS: boolean;
   WHITE_LABEL_API: boolean;
   
-  // ← CRITICAL FIX: Added missing feature flag
+  // ← CRITICAL FIX: Added missing feature flags
   APPROVAL_WORKFLOWS: boolean;
+  FINANCIAL_GOALS: boolean;
+  BUDGET_TRACKING: boolean;
+  EXPENSE_CATEGORIZATION: boolean;
 }
 
 /**
- * Enterprise User Interface - FIXED WITH ACCOUNT TYPE
+ * Enterprise User Interface - COMPLETE WITH ALL FIXES
  * Complete user data structure for Fortune 500-level systems
  */
 export interface User {
@@ -86,7 +107,7 @@ export interface User {
   avatar?: string;
   department?: string;
   companyName?: string;
-  accountType?: AccountType; // ← CRITICAL FIX: Added missing account type property
+  accountType?: AccountType; // ← FIXED: Account type for routing
   permissions: string[];
   featureFlags: FeatureFlags;
   lastLogin?: Date;
@@ -95,6 +116,10 @@ export interface User {
   companyId?: string;
   timezone: string;
   language: string;
+  
+  // ← CRITICAL FIX: Added missing financialGoals property
+  financialGoals?: Goal[];
+  
   preferences: {
     theme: 'light' | 'dark';
     currency: string;
@@ -121,6 +146,15 @@ export interface User {
       country: string;
       zipCode: string;
     };
+  };
+  
+  // Additional enterprise properties
+  financialProfile?: {
+    creditScore?: number;
+    monthlyIncome?: number;
+    monthlyExpenses?: number;
+    netWorth?: number;
+    riskTolerance?: 'low' | 'medium' | 'high';
   };
 }
 
@@ -161,6 +195,11 @@ interface AuthContextType {
   // Company Management
   updateCompany: (companyData: Partial<User['company']>) => Promise<void>;
   
+  // Financial Goals Management
+  addFinancialGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
+  updateFinancialGoal: (goalId: string, updates: Partial<Goal>) => Promise<void>;
+  deleteFinancialGoal: (goalId: string) => Promise<void>;
+  
   // Subscription & Plan Management
   upgradePlan: (newPlan: UserPlan) => Promise<void>;
   cancelSubscription: () => Promise<void>;
@@ -170,7 +209,7 @@ interface AuthContextType {
   getSessionInfo: () => { expiresAt: Date; isActive: boolean };
 }
 
-// ===== DEFAULT FEATURE FLAGS BY PLAN - FIXED WITH APPROVAL_WORKFLOWS =====
+// ===== DEFAULT FEATURE FLAGS BY PLAN - FIXED WITH ALL FLAGS =====
 
 const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
   const baseFlags: FeatureFlags = {
@@ -194,12 +233,16 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
     INTERNATIONAL_TRANSFERS: false,
     RISK_MANAGEMENT: false,
     FRAUD_DETECTION: false,
+    INVESTMENT_TRACKING: false,
     WEBHOOK_SUPPORT: false,
     SANDBOX_ENVIRONMENT: false,
     RATE_LIMITING: false,
     AUDIT_LOGS: false,
     WHITE_LABEL_API: false,
-    APPROVAL_WORKFLOWS: false, // ← CRITICAL FIX: Added missing flag
+    APPROVAL_WORKFLOWS: false, // ← CRITICAL FIX: Added missing flags
+    FINANCIAL_GOALS: false,
+    BUDGET_TRACKING: false,
+    EXPENSE_CATEGORIZATION: false,
   };
 
   switch (plan) {
@@ -216,7 +259,11 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         REAL_TIME_SETTLEMENTS: true,
         RISK_MANAGEMENT: true,
         AUDIT_LOGS: true,
-        APPROVAL_WORKFLOWS: true, // ← CRITICAL FIX: Pro users get approval workflows
+        APPROVAL_WORKFLOWS: true, // ← Pro users get approval workflows
+        FINANCIAL_GOALS: true,
+        BUDGET_TRACKING: true,
+        EXPENSE_CATEGORIZATION: true,
+        INVESTMENT_TRACKING: true,
       };
     
     case 'business':
@@ -239,11 +286,15 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
         INTERNATIONAL_TRANSFERS: true,
         RISK_MANAGEMENT: true,
         FRAUD_DETECTION: true,
+        INVESTMENT_TRACKING: true,
         WEBHOOK_SUPPORT: true,
         SANDBOX_ENVIRONMENT: true,
         RATE_LIMITING: true,
         AUDIT_LOGS: true,
-        APPROVAL_WORKFLOWS: true, // ← CRITICAL FIX: Business users get approval workflows
+        APPROVAL_WORKFLOWS: true, // ← Business users get approval workflows
+        FINANCIAL_GOALS: true,
+        BUDGET_TRACKING: true,
+        EXPENSE_CATEGORIZATION: true,
       };
     
     case 'enterprise':
@@ -254,7 +305,11 @@ const getDefaultFeatureFlags = (plan: UserPlan): FeatureFlags => {
       }, {} as FeatureFlags);
     
     default: // free plan
-      return baseFlags;
+      return {
+        ...baseFlags,
+        FINANCIAL_GOALS: true, // Free users get basic goal tracking
+        EXPENSE_CATEGORIZATION: true,
+      };
   }
 };
 
@@ -280,7 +335,8 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'VIEW_ANALYTICS',
         'MANAGE_BILLING',
         'AUDIT_ACCESS',
-        'SECURITY_ADMIN'
+        'SECURITY_ADMIN',
+        'MANAGE_FINANCIAL_GOALS'
       ];
     
     case 'manager':
@@ -292,7 +348,8 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'BUSINESS_ACCESS',
         'EXPORT_TEAM_DATA',
         'VIEW_TEAM_ANALYTICS',
-        'MANAGE_TEAM_USERS'
+        'MANAGE_TEAM_USERS',
+        'MANAGE_FINANCIAL_GOALS'
       ];
     
     case 'user':
@@ -301,7 +358,8 @@ const getPermissionsByRole = (role: UserRole): string[] => {
         'READ_OWN',
         'WRITE_OWN',
         'SUBMIT_REQUESTS',
-        'VIEW_OWN_DATA'
+        'VIEW_OWN_DATA',
+        'MANAGE_OWN_FINANCIAL_GOALS'
       ];
     
     case 'viewer':
@@ -377,11 +435,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Generate enterprise user with full features - FIXED WITH ACCOUNT TYPE
+   * Generate enterprise user with full features - FIXED WITH ALL PROPERTIES
    */
   const generateEnterpriseUser = (): User => {
     const plan: UserPlan = 'enterprise';
     const role: UserRole = 'enterprise';
+    
+    // ← CRITICAL FIX: Generate sample financial goals
+    const sampleGoals: Goal[] = [
+      {
+        id: 'goal-1',
+        title: 'Emergency Fund',
+        targetAmount: 15000,
+        currentAmount: 8500,
+        deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        category: 'savings',
+        progress: 56.7,
+        description: 'Build emergency fund for 6 months of expenses',
+        priority: 'high',
+        status: 'active'
+      },
+      {
+        id: 'goal-2',
+        title: 'Home Down Payment',
+        targetAmount: 80000,
+        currentAmount: 32000,
+        deadline: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+        category: 'savings',
+        progress: 40.0,
+        description: '20% down payment for dream home',
+        priority: 'medium',
+        status: 'active'
+      },
+      {
+        id: 'goal-3',
+        title: 'Retirement Savings',
+        targetAmount: 500000,
+        currentAmount: 125000,
+        deadline: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+        category: 'investment',
+        progress: 25.0,
+        description: 'Long-term retirement investment portfolio',
+        priority: 'high',
+        status: 'active'
+      },
+      {
+        id: 'goal-4',
+        title: 'New Car',
+        targetAmount: 45000,
+        currentAmount: 15000,
+        deadline: new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        category: 'purchase',
+        progress: 33.3,
+        description: 'Luxury electric vehicle purchase',
+        priority: 'low',
+        status: 'active'
+      },
+      {
+        id: 'goal-5',
+        title: 'Credit Card Debt',
+        targetAmount: 12000,
+        currentAmount: 7000,
+        deadline: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        category: 'debt',
+        progress: 58.3,
+        description: 'Pay off high-interest credit card debt',
+        priority: 'high',
+        status: 'active'
+      }
+    ];
     
     return {
       id: 'user-enterprise-001',
@@ -393,6 +515,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       department: 'Executive',
       companyName: 'TechCorp Industries',
       accountType: 'business', // ← CRITICAL FIX: Added account type
+      financialGoals: sampleGoals, // ← CRITICAL FIX: Added financial goals data
       permissions: getPermissionsByRole(role),
       featureFlags: getDefaultFeatureFlags(plan),
       lastLogin: new Date(),
@@ -427,6 +550,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           country: 'United States',
           zipCode: '94105'
         }
+      },
+      financialProfile: {
+        creditScore: 785,
+        monthlyIncome: 15000,
+        monthlyExpenses: 8500,
+        netWorth: 250000,
+        riskTolerance: 'medium'
       }
     };
   };
@@ -564,7 +694,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ===== FEATURE FLAG METHODS - BILLION-DOLLAR FEATURES =====
 
   /**
-   * Check if user has specific feature flag enabled - TYPE-SAFE WITH APPROVAL_WORKFLOWS
+   * Check if user has specific feature flag enabled - TYPE-SAFE WITH ALL FEATURES
    */
   const hasFeature = useCallback((feature: keyof FeatureFlags): boolean => {
     if (!user) return false;
@@ -641,6 +771,91 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Company update error:', error);
       toast.error('Failed to update company information.');
+      throw error;
+    }
+  };
+
+  // ===== FINANCIAL GOALS MANAGEMENT =====
+
+  /**
+   * Add new financial goal
+   */
+  const addFinancialGoal = async (goalData: Omit<Goal, 'id'>): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const newGoal: Goal = {
+        ...goalData,
+        id: `goal-${Date.now()}`
+      };
+      
+      const updatedUser = {
+        ...user,
+        financialGoals: [...(user.financialGoals || []), newGoal]
+      };
+      
+      setUser(updatedUser);
+      toast.success(`Financial goal "${newGoal.title}" added successfully.`);
+    } catch (error) {
+      console.error('Add financial goal error:', error);
+      toast.error('Failed to add financial goal.');
+      throw error;
+    }
+  };
+
+  /**
+   * Update existing financial goal
+   */
+  const updateFinancialGoal = async (goalId: string, updates: Partial<Goal>): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const updatedGoals = (user.financialGoals || []).map(goal =>
+        goal.id === goalId ? { ...goal, ...updates } : goal
+      );
+      
+      const updatedUser = {
+        ...user,
+        financialGoals: updatedGoals
+      };
+      
+      setUser(updatedUser);
+      toast.success('Financial goal updated successfully.');
+    } catch (error) {
+      console.error('Update financial goal error:', error);
+      toast.error('Failed to update financial goal.');
+      throw error;
+    }
+  };
+
+  /**
+   * Delete financial goal
+   */
+  const deleteFinancialGoal = async (goalId: string): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const updatedGoals = (user.financialGoals || []).filter(goal => goal.id !== goalId);
+      
+      const updatedUser = {
+        ...user,
+        financialGoals: updatedGoals
+      };
+      
+      setUser(updatedUser);
+      toast.success('Financial goal deleted successfully.');
+    } catch (error) {
+      console.error('Delete financial goal error:', error);
+      toast.error('Failed to delete financial goal.');
       throw error;
     }
   };
@@ -812,6 +1027,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Company Management
     updateCompany,
     
+    // Financial Goals Management
+    addFinancialGoal,
+    updateFinancialGoal,
+    deleteFinancialGoal,
+    
     // Subscription Management
     upgradePlan,
     cancelSubscription,
@@ -853,4 +1073,4 @@ export const useAuth = (): AuthContextType => {
 
 export default AuthProvider;
 export { AuthContext };
-export type { User, AccountType };
+export type { User, AccountType, FeatureFlags };
